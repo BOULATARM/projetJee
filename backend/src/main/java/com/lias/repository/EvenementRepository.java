@@ -12,4 +12,5 @@ public interface EvenementRepository extends JpaRepository<Evenement, Long> {
     List<Evenement> findByAnnee(Integer annee);
     List<Evenement> findByType(TypeEvenement type);
     List<Evenement> findByDateDebutBetween(LocalDateTime start, LocalDateTime end);
+    List<Evenement> findByTitreContainingIgnoreCase(String titre);
 }

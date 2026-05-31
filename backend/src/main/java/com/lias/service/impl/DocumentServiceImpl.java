@@ -7,6 +7,7 @@ import com.lias.entity.Membre;
 import com.lias.entity.Reunion;
 import com.lias.entity.Convention;
 import com.lias.enums.TypeDocument;
+import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
 import com.lias.repository.ConventionRepository;
 import com.lias.repository.DocumentRepository;
@@ -15,6 +16,7 @@ import com.lias.repository.MembreRepository;
 import com.lias.repository.ReunionRepository;
 import com.lias.service.DocumentService;
 import com.lias.service.FileStorageService;
+import com.lias.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class DocumentServiceImpl implements DocumentService {
     private final ReunionRepository reunionRepository;
     private final ConventionRepository conventionRepository;
     private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -70,7 +73,21 @@ public class DocumentServiceImpl implements DocumentService {
             document.setConvention(convention);
         }
 
-        return documentRepository.save(document);
+        Document saved = documentRepository.save(document);
+
+        // Notify all active members about the new document
+        String nomDoc = saved.getNom();
+        membreRepository.findByActiveTrue().forEach(m -> {
+            if (!m.getId().equals(membreId)) {
+                notificationService.envoyerNotification(
+                        m.getId(),
+                        membre.getPrenom() + " " + membre.getNom() + " a publié un nouveau document : \"" + nomDoc + "\".",
+                        TypeNotification.NOUVEAU_DOCUMENT
+                );
+            }
+        });
+
+        return saved;
     }
 
     @Override

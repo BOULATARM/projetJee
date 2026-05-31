@@ -4,14 +4,19 @@ import com.lias.dto.request.ReunionRequestDTO;
 import com.lias.entity.Membre;
 import com.lias.entity.ParticipantReunion;
 import com.lias.entity.Reunion;
+import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
 import com.lias.repository.MembreRepository;
 import com.lias.repository.ParticipantReunionRepository;
 import com.lias.repository.ReunionRepository;
+import com.lias.service.FileStorageService;
+import com.lias.service.NotificationService;
 import com.lias.service.ReunionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +28,8 @@ public class ReunionServiceImpl implements ReunionService {
     private final ReunionRepository reunionRepository;
     private final MembreRepository membreRepository;
     private final ParticipantReunionRepository participantRepository;
+    private final NotificationService notificationService;
+    private final FileStorageService fileStorageService;
 
     @Override
     public List<Reunion> getAllReunions() {
@@ -62,7 +69,38 @@ public class ReunionServiceImpl implements ReunionService {
             });
         }
 
+        Reunion saved = reunionRepository.save(reunion);
+
+        // Notify each participant about the new meeting
+        if (dto.getParticipantIds() != null) {
+            String message = "Vous avez été convié(e) à la réunion \"" + dto.getTitre() + "\" le "
+                    + dto.getDateReunion() + (dto.getLieu() != null ? " au " + dto.getLieu() : "") + ".";
+            dto.getParticipantIds().forEach(pid ->
+                    notificationService.envoyerNotification(pid, message, TypeNotification.REUNION)
+            );
+        }
+
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public Reunion uploadPV(Long reunionId, MultipartFile file) {
+        Reunion reunion = reunionRepository.findById(reunionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reunion", "id", reunionId));
+        String path = fileStorageService.uploadFile(file, "pv");
+        reunion.setPvPath(path);
         return reunionRepository.save(reunion);
+    }
+
+    @Override
+    public Resource downloadPV(Long reunionId) {
+        Reunion reunion = reunionRepository.findById(reunionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reunion", "id", reunionId));
+        if (reunion.getPvPath() == null) {
+            throw new RuntimeException("Aucun PV disponible pour cette réunion");
+        }
+        return fileStorageService.loadFileAsResource(reunion.getPvPath());
     }
 
     @Override

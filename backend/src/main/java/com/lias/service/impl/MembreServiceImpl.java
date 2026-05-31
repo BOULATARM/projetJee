@@ -8,16 +8,19 @@ import com.lias.entity.Membre;
 import com.lias.entity.Publication;
 import com.lias.entity.AuteurPublication;
 import com.lias.enums.StatutMembre;
+import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
 import com.lias.mapper.MembreMapper;
 import com.lias.repository.AffiliationMembreRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.repository.PublicationRepository;
 import com.lias.service.MembreService;
+import com.lias.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +33,7 @@ public class MembreServiceImpl implements MembreService {
     private final AffiliationMembreRepository affiliationRepository;
     private final PublicationRepository publicationRepository;
     private final MembreMapper membreMapper;
+    private final NotificationService notificationService;
 
     @Override
     public List<MembreResponseDTO> getAllMembres() {
@@ -115,6 +119,24 @@ public class MembreServiceImpl implements MembreService {
         Membre membre = membreRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", id));
         membre.setStatut(statut);
+
+        // Workflow départ: close all active affiliations when a member retires or leaves
+        if (statut == StatutMembre.RETRAITE || statut == StatutMembre.ANCIEN) {
+            List<AffiliationMembre> actives = affiliationRepository.findByMembreIdOrderByDateDebutDesc(id)
+                    .stream().filter(a -> Boolean.TRUE.equals(a.getActif())).collect(Collectors.toList());
+            for (AffiliationMembre a : actives) {
+                a.setActif(false);
+                a.setDateFin(LocalDate.now());
+            }
+            affiliationRepository.saveAll(actives);
+
+            notificationService.envoyerNotification(
+                    id,
+                    "Votre statut a été mis à jour : " + statut.name() + ". Vos affiliations aux équipes ont été clôturées.",
+                    TypeNotification.DEPART_MEMBRE
+            );
+        }
+
         membreRepository.save(membre);
     }
 

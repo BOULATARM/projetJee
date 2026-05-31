@@ -4,10 +4,13 @@ import com.lias.enums.TypeDocument;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "documents")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -51,4 +54,7 @@ public class Document {
 
     private Long taille;
     private String mimeType;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }

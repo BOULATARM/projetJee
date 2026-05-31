@@ -1,7 +1,6 @@
 package com.lias.controller;
 
 import com.lias.dto.response.RapportAnnuelDTO;
-import com.lias.entity.RapportAnnuel;
 import com.lias.security.UserPrincipal;
 import com.lias.service.RapportAnnuelService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,7 @@ public class RapportController {
     private final RapportAnnuelService rapportService;
 
     @GetMapping
-    public ResponseEntity<List<RapportAnnuel>> getAllRapports() {
+    public ResponseEntity<List<RapportAnnuelDTO>> getAllRapports() {
         return ResponseEntity.ok(rapportService.getRapports());
     }
 

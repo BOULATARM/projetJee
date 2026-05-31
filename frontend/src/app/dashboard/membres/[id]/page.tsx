@@ -5,19 +5,38 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getStatutColor, formatDate } from '@/lib/utils';
 import { membreService } from '@/services/membre.service';
-import { MembreDetail } from '@/types';
-import { Mail, Calendar, Building, BookOpen, ArrowLeft } from 'lucide-react';
+import { MembreDetail, RoleSysteme } from '@/types';
+import { Mail, Calendar, Building, BookOpen, ArrowLeft, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/authStore';
 
 export default function MembreDetailPage() {
   const { id } = useParams();
   const [profil, setProfil] = useState<MembreDetail | null>(null);
+  const [showDepartModal, setShowDepartModal] = useState(false);
+  const [departStatut, setDepartStatut] = useState<'RETRAITE' | 'ANCIEN'>('ANCIEN');
+  const [saving, setSaving] = useState(false);
+  const { role } = useAuthStore();
+  const canManage = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
 
   useEffect(() => {
     if (id) {
       membreService.getById(Number(id)).then(setProfil).catch(() => {});
     }
   }, [id]);
+
+  const handleDepart = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      await membreService.changeStatut(Number(id), departStatut);
+      const updated = await membreService.getById(Number(id));
+      setProfil(updated);
+      setShowDepartModal(false);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!profil) return <div className="text-gray-500">Chargement...</div>;
 
@@ -26,6 +45,36 @@ export default function MembreDetailPage() {
       <Link href="/dashboard/membres" className="flex items-center gap-2 text-primary mb-4 hover:underline">
         <ArrowLeft size={20} /> Retour aux membres
       </Link>
+
+      {showDepartModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Enregistrer un départ</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Cette action clôturera toutes les affiliations actives du membre et lui enverra une notification.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau statut</label>
+            <select
+              className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
+              value={departStatut}
+              onChange={e => setDepartStatut(e.target.value as 'RETRAITE' | 'ANCIEN')}
+            >
+              <option value="ANCIEN">Ancien membre</option>
+              <option value="RETRAITE">Retraité</option>
+            </select>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowDepartModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+              <button
+                onClick={handleDepart}
+                disabled={saving}
+                className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {saving ? 'Enregistrement...' : 'Confirmer le départ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-1 text-center">
@@ -37,6 +86,14 @@ export default function MembreDetailPage() {
             <Badge className={getStatutColor(profil.statut)}>{profil.statut}</Badge>
             <Badge className="bg-primary text-white">{profil.systemRole}</Badge>
           </div>
+          {canManage && profil.statut !== 'RETRAITE' && profil.statut !== 'ANCIEN' && (
+            <button
+              onClick={() => setShowDepartModal(true)}
+              className="mt-4 flex items-center gap-2 text-sm text-red-600 hover:text-red-800 mx-auto"
+            >
+              <LogOut size={15} /> Enregistrer départ
+            </button>
+          )}
           <div className="mt-4 text-sm text-gray-500 space-y-2">
             <div className="flex items-center justify-center gap-2"><Mail size={16} /> {profil.email}</div>
             {profil.dateEmbauche && <div className="flex items-center justify-center gap-2"><Calendar size={16} /> Depuis {formatDate(profil.dateEmbauche)}</div>}

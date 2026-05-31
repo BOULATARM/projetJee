@@ -10,4 +10,5 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     List<Document> findByEvenementId(Long evenementId);
     List<Document> findByReunionId(Long reunionId);
     List<Document> findByConventionId(Long conventionId);
+    List<Document> findByNomContainingIgnoreCase(String nom);
 }

@@ -11,4 +11,5 @@ public interface PublicationRepository extends JpaRepository<Publication, Long> 
     List<Publication> findByEquipeId(Long equipeId);
     List<Publication> findByAuteurs_MembreId(Long membreId);
     long countByAnnee(Integer annee);
+    List<Publication> findByTitreContainingIgnoreCase(String titre);
 }

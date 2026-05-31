@@ -94,7 +94,7 @@ export default function AdhesionPage() {
             {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>}
 
             <button type="submit" disabled={loading}
-              className="w-full bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary-dark disabled:opacity-50">
+              className="w-full bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50">
               {loading ? 'Envoi en cours...' : 'Soumettre la demande'}
             </button>
           </form>

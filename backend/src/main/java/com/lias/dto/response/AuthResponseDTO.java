@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 public class AuthResponseDTO {
     private String token;
+    @Builder.Default
     private String type = "Bearer";
     private Long membreId;
     private String email;

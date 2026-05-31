@@ -7,11 +7,12 @@ import { RoleSysteme } from '@/types';
 import {
   LayoutDashboard, Users, BookOpen, Calendar, FolderOpen, Box, Handshake,
   MessageSquare, Bell, BarChart3, FileText, ClipboardCheck, Shield, Briefcase,
-  ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList,
+  ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList, Search, ScrollText,
 } from 'lucide-react';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/recherche', label: 'Recherche', icon: Search, roles: ['ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE', 'VICE_DIRECTEUR'] },
   { href: '/dashboard/membres', label: 'Membres', icon: Users, roles: ['ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE', 'VICE_DIRECTEUR'] },
   { href: '/dashboard/equipes', label: 'Equipes', icon: GraduationCap, roles: ['ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE', 'VICE_DIRECTEUR'] },
   { href: '/dashboard/publications', label: 'Publications', icon: BookOpen, roles: ['ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE', 'VICE_DIRECTEUR'] },
@@ -28,6 +29,7 @@ const menuItems = [
   { href: '/dashboard/rapport-annuel', label: 'Rapport annuel', icon: FileText, roles: ['ADMIN', 'DIRECTEUR'] },
   { href: '/dashboard/statistiques', label: 'Statistiques', icon: BarChart3, roles: ['ADMIN', 'DIRECTEUR'] },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, roles: ['ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/audit-logs', label: 'Journal d\'audit', icon: ScrollText, roles: ['ADMIN'] },
 ];
 
 type SidebarProps = {

@@ -6,10 +6,14 @@ import com.lias.security.UserPrincipal;
 import com.lias.service.ReunionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -45,5 +49,22 @@ public class ReunionController {
                                                  @RequestParam Boolean present) {
         reunionService.marquerPresence(id, membreId, present);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/pv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE')")
+    public ResponseEntity<Reunion> uploadPV(@PathVariable Long id,
+                                             @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(reunionService.uploadPV(id, file));
+    }
+
+    @GetMapping("/{id}/pv")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> downloadPV(@PathVariable Long id) {
+        Resource resource = reunionService.downloadPV(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"pv-reunion-" + id + ".pdf\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 }

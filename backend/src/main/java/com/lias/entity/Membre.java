@@ -6,7 +6,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,6 +18,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "membres")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
@@ -33,7 +38,7 @@ public class Membre {
     @Column(unique = true)
     private String email;
 
-    @JsonIgnoreProperties
+    @JsonIgnore
     private String motDePasse;
 
     private String photo;
@@ -51,6 +56,13 @@ public class Membre {
 
     @Enumerated(EnumType.STRING)
     private RoleSysteme systemRole;
+
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "membre", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("membre")

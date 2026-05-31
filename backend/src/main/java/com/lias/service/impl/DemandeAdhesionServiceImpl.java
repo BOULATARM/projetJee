@@ -6,10 +6,12 @@ import com.lias.entity.Membre;
 import com.lias.enums.RoleSysteme;
 import com.lias.enums.StatutDemande;
 import com.lias.enums.StatutMembre;
+import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
 import com.lias.repository.DemandeAdhesionRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.service.DemandeAdhesionService;
+import com.lias.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
     private final DemandeAdhesionRepository demandeRepository;
     private final MembreRepository membreRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -85,12 +88,18 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
                 .dateEmbauche(LocalDateTime.now().toLocalDate())
                 .build();
 
-        membreRepository.save(nouveauMembre);
+        Membre membreSauve = membreRepository.save(nouveauMembre);
 
         demande.setStatut(StatutDemande.ACCEPTEE);
         demande.setDateDecision(LocalDateTime.now());
         demande.setDecidePar(directeur);
         demandeRepository.save(demande);
+
+        notificationService.envoyerNotification(
+                membreSauve.getId(),
+                "Bienvenue au LIAS ! Votre demande d'adhésion a été acceptée. Vous pouvez maintenant vous connecter.",
+                TypeNotification.VALIDATION_ADHESION
+        );
     }
 
     @Override
