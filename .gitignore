@@ -1,0 +1,60 @@
+# ==========================================
+# BACKEND — Spring Boot / Maven
+# ==========================================
+
+# Build Maven
+backend/target/
+backend/tmp/
+backend/*.log
+backend/*.err
+
+# Fichiers uploadés (photos, CVs, documents)
+backend/uploads/
+
+# IntelliJ IDEA
+backend/.idea/
+backend/*.iml
+backend/*.iws
+backend/*.ipr
+.idea/
+
+# ==========================================
+# FRONTEND — Next.js / Node
+# ==========================================
+
+# Build Next.js
+frontend/.next/
+frontend/out/
+
+# Dépendances Node
+frontend/node_modules/
+
+# Logs de dev
+frontend/*.log
+frontend/*.err
+
+# Fichiers d'env (contiennent les secrets)
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Cache ESLint / TypeScript
+frontend/.eslintcache
+frontend/tsconfig.tsbuildinfo
+
+# ==========================================
+# GÉNÉRAL
+# ==========================================
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.vscode/
+*.swp
+*.swo
+*~
