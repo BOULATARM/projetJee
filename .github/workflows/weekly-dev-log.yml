@@ -1,0 +1,134 @@
+name: Daily Dev Log 22h30
+
+on:
+  schedule:
+    # S'exécute chaque jour à 21h30 UTC (22h30 heure locale au Maroc)
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  daily-log:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ========================
+      # 0) CHECKOUT
+      # ========================
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_PERSONAL_TOKEN }}
+
+      # ========================
+      # 1) DAILY COMMIT (main)
+      # ========================
+      - name: Update DEV_LOG.md inside logs folder
+        run: |
+          mkdir -p logs
+          echo "- $(date -u '+%Y-%m-%d %H:%M UTC') : Daily update" >> logs/DEV_LOG.md
+
+      - name: Commit & push
+        run: |
+          set -e
+          git config user.name "BOULATARM"
+          git config user.email "Mouadboulatar12@gmail.com"
+          git add logs/DEV_LOG.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: daily update log"
+            git push origin HEAD:main
+          fi
+
+      # ========================
+      # 2) ISSUE: create or comment
+      # ========================
+      - name: Create or comment daily issue
+        env:
+          GH_TOKEN: ${{ secrets.MY_PERSONAL_TOKEN }}
+        run: |
+          set -e
+          TITLE="Daily check: $(date -u '+%Y-%m-%d')"
+
+          ISSUE_NUMBER=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number')
+
+          if [ -n "$ISSUE_NUMBER" ] && [ "$ISSUE_NUMBER" != "null" ]; then
+            echo "Issue exists (#$ISSUE_NUMBER). Adding comment."
+            gh issue comment "$ISSUE_NUMBER" --body "Re-run at $(date -u '+%H:%M UTC'): still tracking today ✅"
+          else
+            echo "Creating issue: $TITLE"
+            gh issue create \
+              --title "$TITLE" \
+              --body "Daily checklist for projetJee:\n- [ ] Review backend architecture\n- [ ] Review frontend integration\n- [ ] Check TODO/FIXME\n- [ ] Run tests and documentation" \
+              --label "documentation"
+          fi
+
+      # ========================
+      # 3) PR: create or reuse
+      # ========================
+      - name: Create or reuse daily PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.MY_PERSONAL_TOKEN }}
+        run: |
+          set -e
+          DATE="$(date -u '+%Y-%m-%d')"
+          BRANCH="daily-pr-$DATE"
+          BASE_BRANCH="main"
+
+          # Check if PR exists
+          PR_NUMBER=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number')
+
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            echo "PR exists (#$PR_NUMBER). Adding comment."
+            gh pr comment "$PR_NUMBER" --body "Re-run at $(date -u '+%H:%M UTC'): PR still valid ✅"
+            echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Create branch
+          git checkout -B "$BRANCH"
+          
+          mkdir -p logs
+          echo "- $(date -u '+%Y-%m-%d %H:%M UTC') PR update" >> logs/PR_LOG.md
+
+          git config user.name "BOULATARM"
+          git config user.email "Mouadboulatar12@gmail.com"
+          git add logs/PR_LOG.md
+          git commit -m "chore: daily pr update" || echo "Nothing to commit"
+          
+          # Force push (-f) pour écraser proprement la branche du jour en cas de re-run
+          git push -f -u origin "$BRANCH"
+
+          # Create PR
+          gh pr create \
+            --title "Daily PR: $DATE" \
+            --body "Automated daily PR.\n\nChanges:\n- Update logs/PR_LOG.md" \
+            --base "$BASE_BRANCH" \
+            --head "$BRANCH"
+
+          PR_NUMBER=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+      # ========================
+      # 4) REVIEW
+      # ========================
+      - name: Submit PR review
+        env:
+          GH_TOKEN: ${{ secrets.MY_PERSONAL_TOKEN }}
+        run: |
+          set -e
+          PR="${{ steps.pr.outputs.number }}"
+
+          if [ -n "$PR" ] && [ "$PR" != "null" ]; then
+            gh api -X POST "repos/${{ github.repository }}/pulls/$PR/reviews" \
+              -f event="COMMENT" \
+              -f body="Daily review $(date -u '+%H:%M UTC'): checked structure. Please run your tests before merging ✅"
+          else
+            echo "No PR found"
+          fi
