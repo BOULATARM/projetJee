@@ -1,0 +1,6 @@
+package com.lias.enums;
+
+public enum TypeNotification {
+    EVENEMENT, VALIDATION_DEMANDE, NOUVEAU_DOCUMENT, NOUVEAU_MEMBRE,
+    DISTRIBUTION_MATERIEL, REUNION, PUBLICATION
+}
