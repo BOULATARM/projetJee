@@ -7,11 +7,12 @@ import { Document } from '@/types';
 import { formatDateTime } from '@/lib/utils';
 import { Download, Search, Upload } from 'lucide-react';
 
-const documentTypes = ['DEMANDE_FINANCEMENT', 'PROGRAMME', 'ATTESTATION', 'RAPPORT', 'ADMINISTRATIF', 'PV_REUNION', 'CONVENTION', 'PUBLICATION', 'AUTRE'];
+const documentTypes = ['', 'DEMANDE_FINANCEMENT', 'PROGRAMME', 'ATTESTATION', 'RAPPORT', 'ADMINISTRATIF', 'PV_REUNION', 'CONVENTION', 'PUBLICATION', 'AUTRE'];
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({ nom: '', description: '', typeDocument: 'AUTRE' });
 
@@ -19,16 +20,16 @@ export default function DocumentsPage() {
     documentService.getAll().then(setDocuments).catch(() => {});
   };
 
-  useEffect(() => {
-    loadDocuments();
-  }, []);
+  useEffect(() => { loadDocuments(); }, []);
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase();
-    return documents.filter((doc) =>
-      [doc.nom, doc.description, doc.typeDocument].some((value) => value?.toLowerCase().includes(query))
-    );
-  }, [documents, search]);
+    return documents.filter((doc) => {
+      const matchText = !query || [doc.nom, doc.description, doc.typeDocument].some(v => v?.toLowerCase().includes(query));
+      const matchType = !typeFilter || doc.typeDocument === typeFilter;
+      return matchText && matchType;
+    });
+  }, [documents, search, typeFilter]);
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -69,7 +70,7 @@ export default function DocumentsPage() {
           <label className="text-sm">
             <span className="block text-gray-600 mb-1">Type</span>
             <select value={form.typeDocument} onChange={(e) => setForm({ ...form, typeDocument: e.target.value })} className="w-full border rounded-lg px-3 py-2">
-              {documentTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+              {documentTypes.filter(Boolean).map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
           </label>
           <button type="submit" disabled={!file} className="bg-primary text-white rounded-lg px-4 py-2 flex items-center justify-center gap-2 disabled:opacity-50">
@@ -79,9 +80,18 @@ export default function DocumentsPage() {
         </form>
       </Card>
 
-      <div className="relative mb-6">
-        <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un document..." className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary" />
+      {/* Search + type filter */}
+      <div className="flex gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un document..."
+            className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+          className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none min-w-[160px]">
+          <option value="">Tous les types</option>
+          {documentTypes.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
       </div>
 
       <div className="space-y-4">
@@ -89,20 +99,26 @@ export default function DocumentsPage() {
           <Card key={doc.id}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <h3 className="font-semibold text-gray-800">{doc.nom}</h3>
                   <Badge className="bg-gray-100 text-gray-700">{doc.typeDocument}</Badge>
+                  {doc.evenement && (
+                    <Badge className="bg-purple-100 text-purple-700">📅 {doc.evenement.titre}</Badge>
+                  )}
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{doc.description || 'Sans description'}</p>
-                <p className="text-xs text-gray-400 mt-2">{formatDateTime(doc.dateUpload)} - {Math.ceil((doc.taille || 0) / 1024)} Ko</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {formatDateTime(doc.dateUpload)} — {Math.ceil((doc.taille || 0) / 1024)} Ko
+                  {doc.uploadePar && ` — Par ${doc.uploadePar.prenom} ${doc.uploadePar.nom}`}
+                </p>
               </div>
-              <button onClick={() => handleDownload(doc)} className="p-2 rounded-lg hover:bg-gray-100" title="Telecharger">
+              <button onClick={() => handleDownload(doc)} className="p-2 rounded-lg hover:bg-gray-100" title="Télécharger">
                 <Download size={20} />
               </button>
             </div>
           </Card>
         ))}
-        {filtered.length === 0 && <p className="text-center text-gray-400 py-8">Aucun document trouve</p>}
+        {filtered.length === 0 && <p className="text-center text-gray-400 py-8">Aucun document trouvé</p>}
       </div>
     </div>
   );

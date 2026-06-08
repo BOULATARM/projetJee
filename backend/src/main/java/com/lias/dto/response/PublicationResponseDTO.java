@@ -15,6 +15,8 @@ public class PublicationResponseDTO {
     private Integer annee;
     private String doi;
     private String lienUrl;
+    private String revue;
+    private String conference;
     private TypePublication typePub;
     private LocalDateTime dateAjout;
     private String fichierPath;

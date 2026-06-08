@@ -2,6 +2,7 @@ package com.lias.controller;
 
 import com.lias.entity.Mandat;
 import com.lias.service.MandatService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,5 +41,11 @@ public class MandatController {
     public ResponseEntity<Void> cloturerMandat(@PathVariable Long id, @RequestParam LocalDate dateFin) {
         mandatService.cloturerMandat(id, dateFin);
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/chefs-equipe")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Mandat> setChefsEquipe(@PathVariable Long id, @RequestBody List<Long> membreIds) {
+        return ResponseEntity.ok(mandatService.setChefsEquipe(id, membreIds));
     }
 }

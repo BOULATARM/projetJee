@@ -53,8 +53,11 @@ public class MandatServiceImpl implements MandatService {
             membreRepository.save(viceDirecteur);
         }
 
+        java.util.List<com.lias.entity.Laboratoire> labos = laboratoireRepository.findAll();
+        com.lias.entity.Laboratoire labo = labos.isEmpty() ? null : labos.get(0);
+
         Mandat mandat = Mandat.builder()
-                .laboratoire(laboratoireRepository.findAll().get(0))
+                .laboratoire(labo)
                 .dateDebut(dateDebut)
                 .actif(true)
                 .directeur(directeur)
@@ -87,5 +90,22 @@ public class MandatServiceImpl implements MandatService {
     @Override
     public List<Mandat> getHistoriqueMandats() {
         return mandatRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public Mandat setChefsEquipe(Long mandatId, java.util.List<Long> membreIds) {
+        Mandat mandat = mandatRepository.findById(mandatId)
+                .orElseThrow(() -> new ResourceNotFoundException("Mandat", "id", mandatId));
+        List<com.lias.entity.Membre> chefs = membreIds.stream()
+                .map(id -> membreRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", id)))
+                .collect(java.util.stream.Collectors.toList());
+        mandat.setChefsEquipe(chefs);
+        chefs.forEach(c -> {
+            c.setSystemRole(com.lias.enums.RoleSysteme.CHEF_EQUIPE);
+            membreRepository.save(c);
+        });
+        return mandatRepository.save(mandat);
     }
 }

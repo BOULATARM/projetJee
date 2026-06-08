@@ -30,9 +30,27 @@ public class DemandeAdhesion {
     private String email;
 
     private String cvPath;
+    private String photoPath;
+    private String motDePasse;
 
     @Column(columnDefinition = "TEXT")
     private String motivation;
+
+    private String nomFaculte;       // pour PERMANENT
+    private String nomLaboOrigine;   // pour ASSOCIE
+
+    private java.time.LocalDate dateNaissance;
+    private java.time.LocalDate dateEmbauche;
+
+    @Column(columnDefinition = "TEXT")
+    private String biographie;
+
+    private String centresInteret;
+
+    @Column(columnDefinition = "TEXT")
+    private String publications;
+
+    private Long equipeId;
 
     @Enumerated(EnumType.STRING)
     private StatutDemande statut = StatutDemande.PENDING;

@@ -6,6 +6,7 @@ import com.lias.repository.NotificationRepository;
 import com.lias.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -18,12 +19,12 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void envoyerNotification(Long destinataireId, String message, TypeNotification type) {
         Notification notification = Notification.builder()
                 .destinataire(com.lias.entity.Membre.builder().id(destinataireId).build())
                 .message(message)
-                .type(type)
+                .type(type != null ? type.name() : null)
                 .lue(false)
                 .dateCreation(LocalDateTime.now())
                 .build();

@@ -10,4 +10,6 @@ public class PublicationSimpleDTO {
     private String titre;
     private Integer annee;
     private String type;
+    private String lienUrl;
+    private String doi;
 }

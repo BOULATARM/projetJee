@@ -33,6 +33,8 @@ public class Publication {
     private Integer annee;
     private String doi;
     private String lienUrl;
+    private String revue;
+    private String conference;
 
     @Enumerated(EnumType.STRING)
     private TypePublication typePub;

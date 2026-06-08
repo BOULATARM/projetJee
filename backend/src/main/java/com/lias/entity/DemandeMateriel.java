@@ -28,6 +28,8 @@ public class DemandeMateriel {
     @Column(columnDefinition = "TEXT")
     private String justification;
 
+    private Integer quantite = 1;
+
     @Enumerated(EnumType.STRING)
     private StatutDemande statut = StatutDemande.PENDING;
 

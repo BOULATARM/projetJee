@@ -1,10 +1,11 @@
 import api from '@/lib/api';
 import { EvenementResponse } from '@/types';
+import { toArray } from '@/lib/normalize';
 
 export const evenementService = {
   getAll: async (): Promise<EvenementResponse[]> => {
     const { data } = await api.get('/evenements');
-    return data;
+    return toArray<EvenementResponse>(data);
   },
 
   getById: async (id: number): Promise<EvenementResponse> => {
@@ -24,6 +25,6 @@ export const evenementService = {
 
   getCalendrier: async (debut: string, fin: string): Promise<EvenementResponse[]> => {
     const { data } = await api.get('/evenements/calendrier', { params: { debut, fin } });
-    return data;
+    return toArray<EvenementResponse>(data);
   },
 };

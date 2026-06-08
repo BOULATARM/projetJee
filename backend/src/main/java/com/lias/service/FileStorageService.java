@@ -29,16 +29,18 @@ public class FileStorageService {
         uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(uploadPath);
-            Files.createDirectories(uploadPath.resolve("photos"));
+            Files.createDirectories(uploadPath.resolve("images"));
+            Files.createDirectories(uploadPath.resolve("pdfs"));
             Files.createDirectories(uploadPath.resolve("documents"));
-            Files.createDirectories(uploadPath.resolve("cv"));
         } catch (IOException e) {
             throw new RuntimeException("Impossible de créer le dossier d'upload: " + uploadDir);
         }
     }
 
     public String uploadFile(MultipartFile file, String subfolder) {
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String rawName = file.getOriginalFilename();
+        String originalFilename = (rawName != null && !rawName.isBlank())
+                ? StringUtils.cleanPath(rawName) : "file";
         String extension = "";
         if (originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));

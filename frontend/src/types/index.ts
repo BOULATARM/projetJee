@@ -44,8 +44,10 @@ export interface AuthResponse {
   membreId: number;
   email: string;
   role: RoleSysteme;
+  statut?: StatutMembre;
   nom: string;
   prenom: string;
+  photo?: string;
 }
 
 export interface MembreResponse {
@@ -93,6 +95,7 @@ export interface AffiliationDTO {
   dateDebut: string;
   dateFin?: string;
   actif: boolean;
+  motifDepart?: string;
 }
 
 export interface RoleDTO {
@@ -108,6 +111,8 @@ export interface PublicationSimple {
   titre: string;
   annee: number;
   type: string;
+  lienUrl?: string;
+  doi?: string;
 }
 
 export interface PublicationResponse {
@@ -117,6 +122,8 @@ export interface PublicationResponse {
   annee: number;
   doi?: string;
   lienUrl?: string;
+  revue?: string;
+  conference?: string;
   typePub: TypePublication;
   dateAjout: string;
   fichierPath?: string;
@@ -173,6 +180,7 @@ export interface Equipe {
   nom: string;
   description?: string;
   axeRecherche?: string;
+  dateCreation?: string;
   chefEquipe?: MembreResponse;
 }
 
@@ -183,11 +191,18 @@ export interface DemandeAdhesion {
   email: string;
   motivation?: string;
   cvPath?: string;
+  photoPath?: string;
   statut: StatutDemande;
   dateDepot: string;
   dateDecision?: string;
   typeMembreDemande: StatutMembre;
   commentaireRefus?: string;
+  decidePar?: MembreResponse;
+  etablissementOrigine?: string;
+  laboratoireOrigine?: string;
+  biographie?: string;
+  centresInteret?: string;
+  publications?: string;
 }
 
 export interface Convention {
@@ -233,15 +248,31 @@ export interface Reunion {
   dateReunion: string;
   lieu?: string;
   ordreJour?: string;
+  compteRendu?: string;
+  pvPath?: string;
   statut: string;
   createur?: MembreResponse;
+  creePar?: MembreResponse;
   participants?: unknown[];
+}
+
+export enum TypeNotification {
+  EVENEMENT = 'EVENEMENT',
+  VALIDATION_DEMANDE = 'VALIDATION_DEMANDE',
+  VALIDATION_ADHESION = 'VALIDATION_ADHESION',
+  REFUS_ADHESION = 'REFUS_ADHESION',
+  NOUVEAU_DOCUMENT = 'NOUVEAU_DOCUMENT',
+  NOUVEAU_MEMBRE = 'NOUVEAU_MEMBRE',
+  DISTRIBUTION_MATERIEL = 'DISTRIBUTION_MATERIEL',
+  REUNION = 'REUNION',
+  PUBLICATION = 'PUBLICATION',
+  DEPART_MEMBRE = 'DEPART_MEMBRE',
 }
 
 export interface Notification {
   id: number;
   message: string;
-  type: string;
+  type: TypeNotification | string;
   lien?: string;
   lue: boolean;
   dateCreation: string;
@@ -272,6 +303,7 @@ export interface Mandat {
   actif: boolean;
   directeur?: MembreResponse;
   viceDirecteur?: MembreResponse;
+  chefsEquipe?: MembreResponse[];
 }
 
 export interface RapportAnnuel {
@@ -302,7 +334,9 @@ export interface DemandeMateriel {
   membre?: MembreResponse;
   description: string;
   justification?: string;
+  quantite?: number;
   statut: StatutDemande;
   dateDemande: string;
   dateTraitement?: string;
+  traitePar?: MembreResponse;
 }

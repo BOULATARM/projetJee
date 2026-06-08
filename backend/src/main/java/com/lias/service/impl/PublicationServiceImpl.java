@@ -12,10 +12,12 @@ import com.lias.mapper.PublicationMapper;
 import com.lias.repository.EquipeRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.repository.PublicationRepository;
+import com.lias.service.FileStorageService;
 import com.lias.service.PublicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,12 +30,27 @@ public class PublicationServiceImpl implements PublicationService {
 
     private final PublicationRepository publicationRepository;
     private final MembreRepository membreRepository;
+    private final FileStorageService fileStorageService;
     private final EquipeRepository equipeRepository;
     private final PublicationMapper publicationMapper;
 
     @Override
     @Transactional
-    public PublicationResponseDTO ajouterPublication(PublicationRequestDTO dto, Long membreId) {
+    public PublicationResponseDTO ajouterPublication(PublicationRequestDTO dto, MultipartFile fichierPdf, Long membreId) {
+        // Validation PDF obligatoire
+        if (fichierPdf == null || fichierPdf.isEmpty()) {
+            throw new IllegalArgumentException("Le fichier PDF de l'article est obligatoire.");
+        }
+        if (!"application/pdf".equals(fichierPdf.getContentType())) {
+            throw new IllegalArgumentException("Le fichier doit être au format PDF.");
+        }
+        if (fichierPdf.getSize() > 20L * 1024 * 1024) {
+            throw new IllegalArgumentException("Le fichier PDF ne doit pas dépasser 20 Mo.");
+        }
+
+        // Stockage dans publications/{membreId}/
+        String pdfPath = fileStorageService.uploadFile(fichierPdf, "publications/" + membreId);
+
         Equipe equipe = null;
         if (dto.getEquipeId() != null) {
             equipe = equipeRepository.findById(dto.getEquipeId())
@@ -46,8 +63,11 @@ public class PublicationServiceImpl implements PublicationService {
                 .annee(dto.getAnnee())
                 .doi(dto.getDoi())
                 .lienUrl(dto.getLienUrl())
+                .revue(dto.getRevue())
+                .conference(dto.getConference())
                 .typePub(dto.getTypePublication())
                 .equipe(equipe)
+                .fichierPath(pdfPath)
                 .dateAjout(LocalDateTime.now())
                 .auteurs(new ArrayList<>())
                 .build();
@@ -79,6 +99,17 @@ public class PublicationServiceImpl implements PublicationService {
     }
 
     @Override
+    public List<PublicationResponseDTO> getAllPublicationsFiltered(Long auteurId, Integer annee, Long equipeId) {
+        List<Publication> all = publicationRepository.findAll();
+        return all.stream()
+                .filter(p -> auteurId == null || p.getAuteurs().stream().anyMatch(a -> a.getMembre().getId().equals(auteurId)))
+                .filter(p -> annee == null || annee.equals(p.getAnnee()))
+                .filter(p -> equipeId == null || (p.getEquipe() != null && equipeId.equals(p.getEquipe().getId())))
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public PublicationResponseDTO getPublicationById(Long id) {
         Publication publication = publicationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Publication", "id", id));
@@ -95,6 +126,8 @@ public class PublicationServiceImpl implements PublicationService {
         if (dto.getAnnee() != null) pub.setAnnee(dto.getAnnee());
         if (dto.getDoi() != null) pub.setDoi(dto.getDoi());
         if (dto.getLienUrl() != null) pub.setLienUrl(dto.getLienUrl());
+        if (dto.getRevue() != null) pub.setRevue(dto.getRevue());
+        if (dto.getConference() != null) pub.setConference(dto.getConference());
         if (dto.getTypePublication() != null) pub.setTypePub(dto.getTypePublication());
         return toResponseDTO(publicationRepository.save(pub));
     }
@@ -134,6 +167,8 @@ public class PublicationServiceImpl implements PublicationService {
                 .annee(publication.getAnnee())
                 .doi(publication.getDoi())
                 .lienUrl(publication.getLienUrl())
+                .revue(publication.getRevue())
+                .conference(publication.getConference())
                 .typePub(publication.getTypePub())
                 .dateAjout(publication.getDateAjout())
                 .fichierPath(publication.getFichierPath())

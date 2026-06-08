@@ -12,6 +12,8 @@ public class PublicationRequestDTO {
     private Integer annee;
     private String doi;
     private String lienUrl;
+    private String revue;
+    private String conference;
     private TypePublication typePublication;
     private Long equipeId;
     private List<Long> auteurIds;

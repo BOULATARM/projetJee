@@ -1,5 +1,6 @@
 package com.lias.controller;
 
+import com.lias.dto.request.EquipeRequestDTO;
 import com.lias.entity.AffiliationMembre;
 import com.lias.entity.Equipe;
 import com.lias.service.EquipeService;
@@ -34,6 +35,18 @@ public class EquipeController {
                                                 @RequestParam(required = false) String description,
                                                 @RequestParam(required = false) Long chefEquipeId) {
         return ResponseEntity.ok(equipeService.creerEquipe(nom, description, chefEquipeId));
+    }
+
+    @PostMapping("/complet")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    public ResponseEntity<Equipe> createEquipeComplet(@RequestBody EquipeRequestDTO dto) {
+        return ResponseEntity.ok(equipeService.creerEquipeComplet(dto));
+    }
+
+    @GetMapping("/{id}/membres")
+    public ResponseEntity<List<com.lias.dto.response.MembreResponseDTO>> getMembresEquipe(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(equipeService.getMembresActifs(id));
     }
 
     @PutMapping("/{id}")

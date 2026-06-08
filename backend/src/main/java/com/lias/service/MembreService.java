@@ -15,4 +15,5 @@ public interface MembreService {
     void reactiverCompte(Long id);
     List<MembreResponseDTO> getMembresParEquipe(Long equipeId);
     List<MembreResponseDTO> searchMembres(String keyword);
+    void changerEquipe(Long membreId, Long equipeId);
 }

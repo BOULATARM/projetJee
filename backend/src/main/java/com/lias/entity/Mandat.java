@@ -41,4 +41,12 @@ public class Mandat {
     @JsonIgnoreProperties("mandat")
     @Builder.Default
     private List<RoleMembre> rolesMembres = new ArrayList<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "mandat_chefs_equipe",
+            joinColumns = @JoinColumn(name = "mandat_id"),
+            inverseJoinColumns = @JoinColumn(name = "membre_id"))
+    @JsonIgnoreProperties({"affiliations", "roles", "demandesAdhesion", "demandesMateriel", "documentsUploades"})
+    @Builder.Default
+    private List<Membre> chefsEquipe = new ArrayList<>();
 }

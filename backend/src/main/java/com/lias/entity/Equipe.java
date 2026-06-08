@@ -3,6 +3,7 @@ package com.lias.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ public class Equipe {
     private String description;
 
     private String axeRecherche;
+    private LocalDate dateCreation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "laboratoire_id")

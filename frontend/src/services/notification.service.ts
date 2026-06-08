@@ -1,15 +1,16 @@
 import api from '@/lib/api';
 import { Notification } from '@/types';
+import { toArray } from '@/lib/normalize';
 
 export const notificationService = {
   getAll: async (): Promise<Notification[]> => {
     const { data } = await api.get('/notifications');
-    return data;
+    return toArray<Notification>(data);
   },
 
   getNonLues: async (): Promise<Notification[]> => {
     const { data } = await api.get('/notifications/non-lues');
-    return data;
+    return toArray<Notification>(data);
   },
 
   marquerLue: async (id: number) => {

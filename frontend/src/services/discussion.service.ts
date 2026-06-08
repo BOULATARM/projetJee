@@ -1,15 +1,16 @@
 import api from '@/lib/api';
 import { Discussion, ReponseDiscussion } from '@/types';
+import { toArray } from '@/lib/normalize';
 
 export const discussionService = {
   getByEquipe: async (equipeId: number): Promise<Discussion[]> => {
     const { data } = await api.get(`/discussions/equipe/${equipeId}`);
-    return data;
+    return toArray<Discussion>(data);
   },
 
   getByEvenement: async (evenementId: number): Promise<Discussion[]> => {
     const { data } = await api.get(`/discussions/evenement/${evenementId}`);
-    return data;
+    return toArray<Discussion>(data);
   },
 
   create: async (dto: Record<string, unknown>): Promise<Discussion> => {

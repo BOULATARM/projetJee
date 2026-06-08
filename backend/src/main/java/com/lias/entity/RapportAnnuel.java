@@ -33,4 +33,7 @@ public class RapportAnnuel {
 
     @Enumerated(EnumType.STRING)
     private StatutRapport statut = StatutRapport.BROUILLON;
+
+    @Column(columnDefinition = "TEXT")
+    private String activites;
 }

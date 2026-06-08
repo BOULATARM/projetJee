@@ -31,14 +31,17 @@ export default function HomePage() {
             <h1 className="text-3xl font-heading font-bold">LIAS</h1>
             <p className="text-blue-200">Laboratoire d&apos;Informatique et d&apos;Applications Scientifiques</p>
           </div>
-          <div className="space-x-4">
+          <nav className="flex items-center gap-3 flex-wrap">
+            <Link href="/membres" className="text-white hover:text-blue-200 text-sm">Membres</Link>
+            <Link href="/evenements" className="text-white hover:text-blue-200 text-sm">Événements</Link>
+            <Link href="/publications" className="text-white hover:text-blue-200 text-sm">Publications</Link>
             <Link href="/auth/login" className="bg-white text-primary px-4 py-2 rounded-lg font-medium hover:bg-blue-50">
               Connexion
             </Link>
             <Link href="/adhesion" className="bg-accent text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700">
               Adhésion
             </Link>
-          </div>
+          </nav>
         </div>
       </header>
 

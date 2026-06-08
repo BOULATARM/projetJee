@@ -6,10 +6,14 @@ import com.lias.security.UserPrincipal;
 import com.lias.service.DemandeAdhesionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -52,5 +56,27 @@ public class DemandeAdhesionController {
                                                 @RequestParam(required = false) String commentaire) {
         demandeAdhesionService.refuserDemande(id, user.getMembreId(), commentaire);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/cv")
+    public ResponseEntity<DemandeAdhesion> uploadCV(@PathVariable Long id,
+                                                     @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(demandeAdhesionService.uploadCV(id, file));
+    }
+
+    @PostMapping("/{id}/photo")
+    public ResponseEntity<DemandeAdhesion> uploadPhoto(@PathVariable Long id,
+                                                        @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(demandeAdhesionService.uploadPhoto(id, file));
+    }
+
+    @GetMapping("/{id}/cv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    public ResponseEntity<Resource> downloadCV(@PathVariable Long id) {
+        Resource resource = demandeAdhesionService.downloadCV(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"cv-" + id + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 }

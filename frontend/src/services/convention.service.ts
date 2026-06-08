@@ -1,10 +1,11 @@
 import api from '@/lib/api';
 import { Convention } from '@/types';
+import { toArray } from '@/lib/normalize';
 
 export const conventionService = {
   getAll: async (): Promise<Convention[]> => {
     const { data } = await api.get('/conventions');
-    return data;
+    return toArray<Convention>(data);
   },
 
   getById: async (id: number): Promise<Convention> => {

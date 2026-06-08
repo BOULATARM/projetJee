@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/Badge';
 import { getStatutColor, formatDate } from '@/lib/utils';
 import { membreService } from '@/services/membre.service';
 import { MembreDetail, RoleSysteme } from '@/types';
-import { Mail, Calendar, Building, BookOpen, ArrowLeft, LogOut } from 'lucide-react';
+import { Mail, Calendar, Building, BookOpen, ArrowLeft, LogOut, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/api';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 export default function MembreDetailPage() {
   const { id } = useParams();
@@ -16,8 +19,10 @@ export default function MembreDetailPage() {
   const [showDepartModal, setShowDepartModal] = useState(false);
   const [departStatut, setDepartStatut] = useState<'RETRAITE' | 'ANCIEN'>('ANCIEN');
   const [saving, setSaving] = useState(false);
-  const { role } = useAuthStore();
+  const { role, membreId: currentMembreId } = useAuthStore();
   const canManage = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
+  const isSelf = currentMembreId === Number(id);
+  const canSeeConfidentiel = isSelf || canManage;
 
   useEffect(() => {
     if (id) {
@@ -38,20 +43,40 @@ export default function MembreDetailPage() {
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !id) return;
+    const formData = new FormData();
+    formData.append('file', e.target.files[0]);
+    try {
+      await api.post(`/membres/${id}/photo`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const updated = await membreService.getById(Number(id));
+      setProfil(updated);
+    } catch {}
+  };
+
   if (!profil) return <div className="text-gray-500">Chargement...</div>;
+
+  const photoUrl = profil.photo ? `${API_BASE.replace('/api/v1', '')}/uploads/${profil.photo}` : null;
 
   return (
     <div>
-      <Link href="/dashboard/membres" className="flex items-center gap-2 text-primary mb-4 hover:underline">
-        <ArrowLeft size={20} /> Retour aux membres
-      </Link>
+      <div className="flex items-center justify-between mb-4">
+        <Link href="/dashboard/membres" className="flex items-center gap-2 text-primary hover:underline">
+          <ArrowLeft size={20} /> Retour aux membres
+        </Link>
+        {canManage && (
+          <Link href={`/dashboard/membres/${id}/edit`} className="text-sm text-primary border border-primary px-3 py-1 rounded-lg hover:bg-primary hover:text-white transition-colors">
+            Modifier
+          </Link>
+        )}
+      </div>
 
       {showDepartModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 className="text-lg font-bold text-gray-800 mb-2">Enregistrer un départ</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Cette action clôturera toutes les affiliations actives du membre et lui enverra une notification.
+              Cette action clôturera toutes les affiliations actives du membre.
             </p>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau statut</label>
             <select
@@ -78,11 +103,25 @@ export default function MembreDetailPage() {
 
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="md:col-span-1 text-center">
-          <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-            {profil.prenom[0]}{profil.nom[0]}
+          {/* Photo */}
+          <div className="relative w-24 h-24 mx-auto mb-4">
+            {photoUrl ? (
+              <img src={photoUrl} alt="Photo" className="w-24 h-24 rounded-full object-cover border-2 border-primary" />
+            ) : (
+              <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                {profil.prenom[0]}{profil.nom[0]}
+              </div>
+            )}
+            {(isSelf || canManage) && (
+              <label className="absolute bottom-0 right-0 bg-white border border-gray-300 rounded-full p-1 cursor-pointer hover:bg-gray-50" title="Changer la photo">
+                <span className="text-xs">📷</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              </label>
+            )}
           </div>
+
           <h2 className="text-xl font-bold">{profil.prenom} {profil.nom}</h2>
-          <div className="flex justify-center gap-2 mt-2">
+          <div className="flex justify-center gap-2 mt-2 flex-wrap">
             <Badge className={getStatutColor(profil.statut)}>{profil.statut}</Badge>
             <Badge className="bg-primary text-white">{profil.systemRole}</Badge>
           </div>
@@ -98,10 +137,24 @@ export default function MembreDetailPage() {
             <div className="flex items-center justify-center gap-2"><Mail size={16} /> {profil.email}</div>
             {profil.dateEmbauche && <div className="flex items-center justify-center gap-2"><Calendar size={16} /> Depuis {formatDate(profil.dateEmbauche)}</div>}
             {profil.etablissementOrigine && <div className="flex items-center justify-center gap-2"><Building size={16} /> {profil.etablissementOrigine}</div>}
+            {profil.laboratoireOrigine && <div className="flex items-center justify-center gap-2"><Building size={16} className="text-gray-400" /> {profil.laboratoireOrigine}</div>}
           </div>
         </Card>
 
         <div className="md:col-span-2 space-y-6">
+          {/* Informations personnelles (confidentielles) */}
+          {canSeeConfidentiel && profil.dateNaissance && (
+            <Card>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="font-semibold">Informations personnelles</h3>
+                <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1"><Lock size={10} /> Confidentiel</Badge>
+              </div>
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Date de naissance :</span> {formatDate(profil.dateNaissance)}
+              </p>
+            </Card>
+          )}
+
           {profil.biographie && (
             <Card>
               <h3 className="font-semibold mb-2">Biographie</h3>
@@ -119,14 +172,16 @@ export default function MembreDetailPage() {
             <h3 className="font-semibold mb-3">Historique des affiliations</h3>
             <div className="space-y-2">
               {profil.affiliations.map(a => (
-                <div key={a.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <div key={a.id} className="flex items-start justify-between p-2 bg-gray-50 rounded">
                   <div>
                     <p className="font-medium text-sm">{a.equipeNom}</p>
                     <p className="text-xs text-gray-500">{formatDate(a.dateDebut)}{a.dateFin ? ` - ${formatDate(a.dateFin)}` : ' - Présent'}</p>
+                    {a.motifDepart && <p className="text-xs text-red-500 mt-1">Motif : {a.motifDepart}</p>}
                   </div>
                   {a.actif ? <Badge className="bg-green-100 text-green-800">Actif</Badge> : <Badge className="bg-gray-100 text-gray-600">Ancien</Badge>}
                 </div>
               ))}
+              {profil.affiliations.length === 0 && <p className="text-sm text-gray-400">Aucune affiliation</p>}
             </div>
           </Card>
 

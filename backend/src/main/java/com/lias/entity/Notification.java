@@ -1,6 +1,5 @@
 package com.lias.entity;
 
-import com.lias.enums.TypeNotification;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -24,8 +23,8 @@ public class Notification {
 
     private String message;
 
-    @Enumerated(EnumType.STRING)
-    private TypeNotification type;
+    @Column(length = 50)
+    private String type;
 
     private String lien;
     private Boolean lue = false;

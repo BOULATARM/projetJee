@@ -23,4 +23,5 @@ public class RapportAnnuelDTO {
     private List<MembreResponseDTO> membres;
     private Map<String, Long> publicationsParType;
     private Map<String, Long> membresParStatut;
+    private String activites;
 }

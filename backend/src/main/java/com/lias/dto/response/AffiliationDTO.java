@@ -13,4 +13,5 @@ public class AffiliationDTO {
     private LocalDate dateDebut;
     private LocalDate dateFin;
     private Boolean actif;
+    private String motifDepart;
 }

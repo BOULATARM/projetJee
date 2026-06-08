@@ -1,9 +1,11 @@
 package com.lias.service.impl;
 
+import com.lias.dto.response.MembreResponseDTO;
 import com.lias.entity.AffiliationMembre;
 import com.lias.entity.Equipe;
 import com.lias.entity.Membre;
 import com.lias.exception.ResourceNotFoundException;
+import com.lias.mapper.MembreMapper;
 import com.lias.repository.AffiliationMembreRepository;
 import com.lias.repository.EquipeRepository;
 import com.lias.repository.MembreRepository;
@@ -22,6 +24,7 @@ public class EquipeServiceImpl implements EquipeService {
     private final EquipeRepository equipeRepository;
     private final MembreRepository membreRepository;
     private final AffiliationMembreRepository affiliationRepository;
+    private final MembreMapper membreMapper;
 
     @Override
     public List<Equipe> getAllEquipes() {
@@ -45,6 +48,25 @@ public class EquipeServiceImpl implements EquipeService {
         Equipe equipe = Equipe.builder()
                 .nom(nom)
                 .description(description)
+                .chefEquipe(chef)
+                .dateCreation(java.time.LocalDate.now())
+                .build();
+        return equipeRepository.save(equipe);
+    }
+
+    @Override
+    @Transactional
+    public Equipe creerEquipeComplet(com.lias.dto.request.EquipeRequestDTO dto) {
+        Membre chef = null;
+        if (dto.getChefEquipeId() != null) {
+            chef = membreRepository.findById(dto.getChefEquipeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", dto.getChefEquipeId()));
+        }
+        Equipe equipe = Equipe.builder()
+                .nom(dto.getNom())
+                .description(dto.getDescription())
+                .axeRecherche(dto.getAxeRecherche())
+                .dateCreation(dto.getDateCreation() != null ? dto.getDateCreation() : java.time.LocalDate.now())
                 .chefEquipe(chef)
                 .build();
         return equipeRepository.save(equipe);
@@ -93,6 +115,16 @@ public class EquipeServiceImpl implements EquipeService {
         });
     }
 
+    @Transactional
+    public void retirerMembreAvecMotif(Long membreId, Long equipeId, LocalDate dateFin, String motifDepart) {
+        affiliationRepository.findByMembreIdAndActifTrue(membreId).ifPresent(a -> {
+            a.setActif(false);
+            a.setDateFin(dateFin);
+            a.setMotifDepart(motifDepart);
+            affiliationRepository.save(a);
+        });
+    }
+
     @Override
     public List<AffiliationMembre> getHistoriqueAffiliations(Long membreId) {
         return affiliationRepository.findByMembreIdOrderByDateDebutDesc(membreId);
@@ -101,5 +133,13 @@ public class EquipeServiceImpl implements EquipeService {
     @Override
     public List<AffiliationMembre> getAffiliationsByEquipe(Long equipeId) {
         return affiliationRepository.findByEquipeIdAndActifTrue(equipeId);
+    }
+
+    @Override
+    public List<MembreResponseDTO> getMembresActifs(Long equipeId) {
+        List<AffiliationMembre> affiliations = affiliationRepository.findByEquipeIdAndActifTrue(equipeId);
+        return affiliations.stream()
+                .map(a -> membreMapper.toResponseDTO(a.getMembre()))
+                .collect(java.util.stream.Collectors.toList());
     }
 }

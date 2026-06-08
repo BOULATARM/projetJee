@@ -1,10 +1,11 @@
 import api from '@/lib/api';
 import { MembreResponse, MembreDetail } from '@/types';
+import { toArray } from '@/lib/normalize';
 
 export const membreService = {
   getAll: async (): Promise<MembreResponse[]> => {
     const { data } = await api.get('/membres');
-    return data;
+    return toArray<MembreResponse>(data);
   },
 
   getById: async (id: number): Promise<MembreDetail> => {
@@ -19,12 +20,12 @@ export const membreService = {
 
   search: async (q: string): Promise<MembreResponse[]> => {
     const { data } = await api.get('/membres/search', { params: { q } });
-    return data;
+    return toArray<MembreResponse>(data);
   },
 
   getByEquipe: async (equipeId: number): Promise<MembreResponse[]> => {
     const { data } = await api.get(`/membres/equipe/${equipeId}`);
-    return data;
+    return toArray<MembreResponse>(data);
   },
 
   changeStatut: async (id: number, statut: string) => {

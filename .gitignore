@@ -58,3 +58,7 @@ desktop.ini
 *.swp
 *.swo
 *~
+frontend/node_modules/ 
+frontend/.next/ 
+backend/__pycache__/ 
+.env 

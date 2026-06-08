@@ -29,4 +29,5 @@ public class AffiliationMembre {
     private LocalDate dateDebut;
     private LocalDate dateFin;
     private Boolean actif = true;
+    private String motifDepart;
 }

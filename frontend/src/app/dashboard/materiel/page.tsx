@@ -86,6 +86,7 @@ export default function MaterielPage() {
                 <div>
                   <p className="font-medium">{m.nom}</p>
                   <p className="text-sm text-gray-500">{m.categorie || 'Sans categorie'}</p>
+                  {m.description && <p className="text-xs text-gray-400 line-clamp-2">{m.description}</p>}
                 </div>
                 <Badge className={m.quantiteDisponible > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                   {m.quantiteDisponible}/{m.quantiteTotale}

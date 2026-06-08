@@ -6,12 +6,14 @@ import com.lias.entity.Membre;
 import com.lias.enums.RoleSysteme;
 import com.lias.enums.StatutDemande;
 import com.lias.enums.StatutMembre;
-import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
+import com.lias.entity.AffiliationMembre;
+import com.lias.entity.Equipe;
+import com.lias.repository.AffiliationMembreRepository;
 import com.lias.repository.DemandeAdhesionRepository;
+import com.lias.repository.EquipeRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.service.DemandeAdhesionService;
-import com.lias.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,8 +29,10 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
 
     private final DemandeAdhesionRepository demandeRepository;
     private final MembreRepository membreRepository;
+    private final AffiliationMembreRepository affiliationRepository;
+    private final EquipeRepository equipeRepository;
     private final PasswordEncoder passwordEncoder;
-    private final NotificationService notificationService;
+    private final com.lias.service.FileStorageService fileStorageService;
 
     @Override
     @Transactional
@@ -41,8 +45,17 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
                 .nom(dto.getNom())
                 .prenom(dto.getPrenom())
                 .email(dto.getEmail())
+                .motDePasse(passwordEncoder.encode(dto.getMotDePasse()))
                 .motivation(dto.getMotivation())
                 .cvPath(dto.getCvPath())
+                .nomFaculte(dto.getNomFaculte())
+                .nomLaboOrigine(dto.getNomLaboOrigine())
+                .dateNaissance(dto.getDateNaissance())
+                .dateEmbauche(dto.getDateEmbauche())
+                .biographie(dto.getBiographie())
+                .centresInteret(dto.getCentresInteret())
+                .publications(dto.getPublications())
+                .equipeId(dto.getEquipeId())
                 .statut(StatutDemande.PENDING)
                 .dateDepot(LocalDateTime.now())
                 .typeMembreDemande(dto.getTypeMembreDemande() != null ?
@@ -77,29 +90,80 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
         Membre directeur = membreRepository.findById(directeurId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", directeurId));
 
+        if (membreRepository.existsByEmail(demande.getEmail())) {
+            throw new RuntimeException("Un compte avec l'email " + demande.getEmail() + " existe déjà");
+        }
+
+        String password = demande.getMotDePasse() != null
+                ? demande.getMotDePasse()
+                : passwordEncoder.encode(UUID.randomUUID().toString().substring(0, 12));
+
         Membre nouveauMembre = Membre.builder()
                 .nom(demande.getNom())
                 .prenom(demande.getPrenom())
                 .email(demande.getEmail())
-                .motDePasse(passwordEncoder.encode(UUID.randomUUID().toString().substring(0, 12)))
+                .motDePasse(password)
                 .statut(demande.getTypeMembreDemande())
                 .active(true)
                 .systemRole(RoleSysteme.MEMBRE)
                 .dateEmbauche(LocalDateTime.now().toLocalDate())
+                .etablissementOrigine(demande.getNomFaculte())
+                .laboratoireOrigine(demande.getNomLaboOrigine())
+                .biographie(demande.getBiographie())
+                .centresInteret(demande.getCentresInteret())
+                .photo(demande.getPhotoPath())
                 .build();
 
         Membre membreSauve = membreRepository.save(nouveauMembre);
+
+        if (demande.getEquipeId() != null) {
+            equipeRepository.findById(demande.getEquipeId()).ifPresent(equipe -> {
+                AffiliationMembre affiliation = AffiliationMembre.builder()
+                        .membre(membreSauve)
+                        .equipe(equipe)
+                        .dateDebut(java.time.LocalDate.now())
+                        .actif(true)
+                        .build();
+                affiliationRepository.save(affiliation);
+            });
+        }
 
         demande.setStatut(StatutDemande.ACCEPTEE);
         demande.setDateDecision(LocalDateTime.now());
         demande.setDecidePar(directeur);
         demandeRepository.save(demande);
 
-        notificationService.envoyerNotification(
-                membreSauve.getId(),
-                "Bienvenue au LIAS ! Votre demande d'adhésion a été acceptée. Vous pouvez maintenant vous connecter.",
-                TypeNotification.VALIDATION_ADHESION
-        );
+        // notification envoyée après commit pour éviter les conflits de transaction
+    }
+
+    @Override
+    @Transactional
+    public DemandeAdhesion uploadCV(Long demandeId, org.springframework.web.multipart.MultipartFile file) {
+        DemandeAdhesion demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("DemandeAdhesion", "id", demandeId));
+        String path = fileStorageService.uploadFile(file, "pdfs");
+        demande.setCvPath(path);
+        return demandeRepository.save(demande);
+    }
+
+    @Override
+    @Transactional
+    public DemandeAdhesion uploadPhoto(Long demandeId, org.springframework.web.multipart.MultipartFile file) {
+        DemandeAdhesion demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("DemandeAdhesion", "id", demandeId));
+        String path = fileStorageService.uploadFile(file, "images");
+        demande.setPhotoPath(path);
+        return demandeRepository.save(demande);
+    }
+
+    @Override
+    public org.springframework.core.io.Resource downloadCV(Long demandeId) {
+        DemandeAdhesion demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("DemandeAdhesion", "id", demandeId));
+        if (demande.getCvPath() == null) {
+            throw new RuntimeException("Aucun CV disponible pour cette demande");
+        }
+        return fileStorageService.loadFileAsResource(demande.getCvPath());
     }
 
     @Override

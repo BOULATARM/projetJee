@@ -11,7 +11,9 @@ import com.lias.enums.StatutMembre;
 import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
 import com.lias.mapper.MembreMapper;
+import com.lias.entity.Equipe;
 import com.lias.repository.AffiliationMembreRepository;
+import com.lias.repository.EquipeRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.repository.PublicationRepository;
 import com.lias.service.MembreService;
@@ -32,6 +34,7 @@ public class MembreServiceImpl implements MembreService {
     private final MembreRepository membreRepository;
     private final AffiliationMembreRepository affiliationRepository;
     private final PublicationRepository publicationRepository;
+    private final EquipeRepository equipeRepository;
     private final MembreMapper membreMapper;
     private final NotificationService notificationService;
 
@@ -72,6 +75,7 @@ public class MembreServiceImpl implements MembreService {
                                 .dateDebut(a.getDateDebut())
                                 .dateFin(a.getDateFin())
                                 .actif(a.getActif())
+                                .motifDepart(a.getMotifDepart())
                                 .build()
                 ).collect(Collectors.toList()))
                 .roles(membre.getRoles().stream().map(r ->
@@ -89,6 +93,8 @@ public class MembreServiceImpl implements MembreService {
                                 .titre(p.getTitre())
                                 .annee(p.getAnnee())
                                 .type(p.getTypePub().name())
+                                .lienUrl(p.getLienUrl())
+                                .doi(p.getDoi())
                                 .build()
                 ).collect(Collectors.toList()))
                 .build();
@@ -130,11 +136,13 @@ public class MembreServiceImpl implements MembreService {
             }
             affiliationRepository.saveAll(actives);
 
-            notificationService.envoyerNotification(
-                    id,
-                    "Votre statut a été mis à jour : " + statut.name() + ". Vos affiliations aux équipes ont été clôturées.",
-                    TypeNotification.DEPART_MEMBRE
-            );
+            try {
+                notificationService.envoyerNotification(
+                        id,
+                        "Votre statut a été mis à jour : " + statut.name() + ". Vos affiliations aux équipes ont été clôturées.",
+                        TypeNotification.DEPART_MEMBRE
+                );
+            } catch (Exception ignored) {}
         }
 
         membreRepository.save(membre);
@@ -164,6 +172,29 @@ public class MembreServiceImpl implements MembreService {
         return affiliations.stream()
                 .map(a -> membreMapper.toResponseDTO(a.getMembre()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void changerEquipe(Long membreId, Long equipeId) {
+        Membre membre = membreRepository.findById(membreId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", membreId));
+        Equipe equipe = equipeRepository.findById(equipeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Equipe", "id", equipeId));
+
+        affiliationRepository.findByMembreIdAndActifTrue(membreId).ifPresent(a -> {
+            a.setActif(false);
+            a.setDateFin(LocalDate.now());
+            affiliationRepository.save(a);
+        });
+
+        AffiliationMembre affiliation = AffiliationMembre.builder()
+                .membre(membre)
+                .equipe(equipe)
+                .dateDebut(LocalDate.now())
+                .actif(true)
+                .build();
+        affiliationRepository.save(affiliation);
     }
 
     @Override

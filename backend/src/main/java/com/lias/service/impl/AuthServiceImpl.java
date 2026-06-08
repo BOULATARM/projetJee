@@ -32,9 +32,12 @@ public class AuthServiceImpl implements AuthService {
         Membre membre = membreRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "email", dto.getEmail()));
 
-        if (!membre.getActive()) {
+        if (!Boolean.TRUE.equals(membre.getActive())
+                && membre.getStatut() != com.lias.enums.StatutMembre.RETRAITE
+                && membre.getStatut() != com.lias.enums.StatutMembre.ANCIEN) {
             throw new RuntimeException("Compte désactivé");
         }
+        // RETRAITE et ANCIEN : autorisés à se connecter — le frontend gère la redirection
 
         String token = jwtTokenProvider.generateToken(authentication);
 
@@ -43,8 +46,10 @@ public class AuthServiceImpl implements AuthService {
                 .membreId(membre.getId())
                 .email(membre.getEmail())
                 .role(membre.getSystemRole())
+                .statut(membre.getStatut())
                 .nom(membre.getNom())
                 .prenom(membre.getPrenom())
+                .photo(membre.getPhoto())
                 .build();
     }
 

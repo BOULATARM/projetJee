@@ -53,6 +53,7 @@ export default function RapportAnnuelPage() {
               <div>
                 <h3 className="font-semibold text-gray-800">Rapport {rapport.annee}</h3>
                 <p className="text-sm text-gray-500 mt-1">{rapport.dateGeneration ? formatDateTime(rapport.dateGeneration) : 'Non genere'}</p>
+                {rapport.generePar && <p className="text-xs text-gray-400">Par {rapport.generePar}</p>}
               </div>
               <Badge className={getStatutColor(rapport.statut)}>{rapport.statut}</Badge>
             </div>

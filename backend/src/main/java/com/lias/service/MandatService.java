@@ -9,4 +9,5 @@ public interface MandatService {
     Mandat creerMandat(Long directeurId, Long viceDirecteurId, LocalDate dateDebut);
     void cloturerMandat(Long mandatId, LocalDate dateFin);
     List<Mandat> getHistoriqueMandats();
+    Mandat setChefsEquipe(Long mandatId, java.util.List<Long> membreIds);
 }

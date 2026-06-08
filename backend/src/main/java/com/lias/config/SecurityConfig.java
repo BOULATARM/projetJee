@@ -1,6 +1,7 @@
 package com.lias.config;
 
 import com.lias.security.JwtAuthenticationFilter;
+import com.lias.security.ReadOnlyFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +34,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public - no authentication required
                         .requestMatchers("/api/v1/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/demandes-adhesion").permitAll()
+                        .requestMatchers("/api/v1/roles").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/demandes-adhesion/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/membres/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/publications/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/evenements/**").permitAll()
@@ -41,7 +44,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/conventions/**").permitAll()
 
                         // Admin / Directeur only
-                        .requestMatchers("/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR")
                         .requestMatchers("/api/v1/rapports/**").hasAnyRole("ADMIN", "DIRECTEUR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/evenements").hasAnyRole("ADMIN", "DIRECTEUR")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/evenements/**").hasAnyRole("ADMIN", "DIRECTEUR")
@@ -59,7 +63,8 @@ public class SecurityConfig {
                         // Everything else requires login
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new ReadOnlyFilter(), JwtAuthenticationFilter.class);
 
         return http.build();
     }

@@ -21,7 +21,10 @@ export default function LoginPage() {
     try {
       const response = await authService.login(email, password);
       setAuth(response);
-      router.push('/dashboard');
+      // Redirection selon le statut du membre
+      if (response.statut === 'RETRAITE') router.push('/dashboard/retraite');
+      else if (response.statut === 'ANCIEN') router.push('/dashboard/ancien');
+      else router.push('/dashboard');
     } catch {
       setError('Email ou mot de passe incorrect');
     } finally {
