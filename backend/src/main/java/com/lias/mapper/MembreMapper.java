@@ -1,7 +1,6 @@
 package com.lias.mapper;
 
 import com.lias.dto.request.MembreRequestDTO;
-import com.lias.dto.response.MembreDetailDTO;
 import com.lias.dto.response.MembreResponseDTO;
 import com.lias.entity.Membre;
 import org.mapstruct.Mapper;

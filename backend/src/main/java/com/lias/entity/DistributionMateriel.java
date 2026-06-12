@@ -3,6 +3,7 @@ package com.lias.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lias.enums.TypeMateriel;
 import java.time.LocalDate;
 
 @Entity
@@ -18,7 +19,7 @@ public class DistributionMateriel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "materiel_id")
-    @JsonIgnoreProperties("distributions")
+    @JsonIgnoreProperties({"distributions", "historique"})
     private Materiel materiel;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,6 +29,13 @@ public class DistributionMateriel {
 
     private Integer quantite;
     private LocalDate dateDistribution;
+
+    @Enumerated(EnumType.STRING)
+    private TypeMateriel typeMateriel;
+
+    private LocalDate datePrise;
+    private LocalDate dateRetourPrevue;
+    private LocalDate dateRetourEffective;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "distribute_par_id")

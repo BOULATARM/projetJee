@@ -9,6 +9,8 @@ import java.util.Optional;
 @Repository
 public interface AffiliationMembreRepository extends JpaRepository<AffiliationMembre, Long> {
     Optional<AffiliationMembre> findByMembreIdAndActifTrue(Long membreId);
+    List<AffiliationMembre> findByEquipeId(Long equipeId);
     List<AffiliationMembre> findByEquipeIdAndActifTrue(Long equipeId);
     List<AffiliationMembre> findByMembreIdOrderByDateDebutDesc(Long membreId);
+    void deleteByEquipeId(Long equipeId);
 }

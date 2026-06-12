@@ -1,19 +1,12 @@
 package com.lias.service.impl;
 
 import com.lias.dto.request.DocumentRequestDTO;
-import com.lias.entity.Document;
-import com.lias.entity.Evenement;
-import com.lias.entity.Membre;
-import com.lias.entity.Reunion;
-import com.lias.entity.Convention;
+import com.lias.entity.*;
+import com.lias.enums.StatutDocument;
 import com.lias.enums.TypeDocument;
 import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
-import com.lias.repository.ConventionRepository;
-import com.lias.repository.DocumentRepository;
-import com.lias.repository.EvenementRepository;
-import com.lias.repository.MembreRepository;
-import com.lias.repository.ReunionRepository;
+import com.lias.repository.*;
 import com.lias.service.DocumentService;
 import com.lias.service.FileStorageService;
 import com.lias.service.NotificationService;
@@ -40,11 +33,14 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional
-    public Document uploadDocument(MultipartFile file, DocumentRequestDTO dto, Long membreId) {
+    public Document uploadDocument(MultipartFile file, DocumentRequestDTO dto, Long membreId, boolean isPrivileged) {
         Membre membre = membreRepository.findById(membreId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", membreId));
 
         String filePath = fileStorageService.uploadFile(file, "documents");
+
+        // Documents from ADMIN/DIRECTEUR are directly approved; members' documents need approval
+        StatutDocument statut = isPrivileged ? StatutDocument.APPROUVE : StatutDocument.PENDING;
 
         Document document = Document.builder()
                 .nom(dto.getNom() != null ? dto.getNom() : file.getOriginalFilename())
@@ -55,6 +51,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .uploadePar(membre)
                 .taille(file.getSize())
                 .mimeType(file.getContentType())
+                .statut(statut)
                 .build();
 
         if (dto.getEvenementId() != null) {
@@ -75,13 +72,88 @@ public class DocumentServiceImpl implements DocumentService {
 
         Document saved = documentRepository.save(document);
 
-        // Notify all active members about the new document
+        if (isPrivileged) {
+            // Notify all members about the new published document
+            String nomDoc = saved.getNom();
+            membreRepository.findByActiveTrue().forEach(m -> {
+                if (!m.getId().equals(membreId)) {
+                    notificationService.envoyerNotification(
+                            m.getId(),
+                            membre.getPrenom() + " " + membre.getNom() + " a publié un nouveau document : \"" + nomDoc + "\".",
+                            TypeNotification.NOUVEAU_DOCUMENT
+                    );
+                }
+            });
+        } else {
+            // Notify director(s) that a member submitted a document for approval
+            String nomDoc = saved.getNom();
+            membreRepository.findByActiveTrue().forEach(m -> {
+                boolean isDirecteur = m.getRoles() != null && m.getRoles().stream()
+                        .anyMatch(r -> r.getRole() != null && "DIRECTEUR".equals(r.getRole().name()));
+                if (isDirecteur) {
+                    notificationService.envoyerNotification(
+                            m.getId(),
+                            membre.getPrenom() + " " + membre.getNom() + " a soumis un document en attente d'approbation : \"" + nomDoc + "\".",
+                            TypeNotification.NOUVEAU_DOCUMENT
+                    );
+                }
+            });
+        }
+
+        return saved;
+    }
+
+    @Override
+    public List<Document> getAllDocuments() {
+        return documentRepository.findByStatutOrderByDateUploadDesc(StatutDocument.APPROUVE);
+    }
+
+    @Override
+    public List<Document> getDocumentsPending() {
+        return documentRepository.findByStatutOrderByDateUploadDesc(StatutDocument.PENDING);
+    }
+
+    @Override
+    public List<Document> getHistoriqueDecisions() {
+        return documentRepository.findAllByOrderByDateUploadDesc();
+    }
+
+    @Override
+    public List<Document> getMesDocuments(Long membreId) {
+        return documentRepository.findByUploadeParIdOrderByDateUploadDesc(membreId);
+    }
+
+    @Override
+    @Transactional
+    public Document approuverDocument(Long documentId, Long directeurId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Membre directeur = membreRepository.findById(directeurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", directeurId));
+
+        document.setStatut(StatutDocument.APPROUVE);
+        document.setDateDecision(LocalDateTime.now());
+        document.setApprouvePar(directeur);
+
+        Document saved = documentRepository.save(document);
+
+        // Notify the uploader
+        if (document.getUploadePar() != null) {
+            notificationService.envoyerNotification(
+                    document.getUploadePar().getId(),
+                    "Votre document \"" + document.getNom() + "\" a été approuvé et publié.",
+                    TypeNotification.NOUVEAU_DOCUMENT
+            );
+        }
+
+        // Notify all active members about the newly published document
         String nomDoc = saved.getNom();
+        Long uploadeurId = document.getUploadePar() != null ? document.getUploadePar().getId() : -1L;
         membreRepository.findByActiveTrue().forEach(m -> {
-            if (!m.getId().equals(membreId)) {
+            if (!m.getId().equals(uploadeurId) && !m.getId().equals(directeurId)) {
                 notificationService.envoyerNotification(
                         m.getId(),
-                        membre.getPrenom() + " " + membre.getNom() + " a publié un nouveau document : \"" + nomDoc + "\".",
+                            "Un nouveau document a été publié : \"" + nomDoc + "\".",
                         TypeNotification.NOUVEAU_DOCUMENT
                 );
             }
@@ -91,8 +163,34 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public List<Document> getAllDocuments() {
-        return documentRepository.findAll();
+    @Transactional
+    public Document rejeterDocument(Long documentId, String motifRefus, Long directeurId) {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Membre directeur = membreRepository.findById(directeurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", directeurId));
+
+        document.setStatut(StatutDocument.REJETE);
+        document.setMotifRefus(motifRefus);
+        document.setDateDecision(LocalDateTime.now());
+        document.setApprouvePar(directeur);
+
+        Document saved = documentRepository.save(document);
+
+        // Notify the uploader
+        if (document.getUploadePar() != null) {
+            String msg = "Votre document \"" + document.getNom() + "\" a été refusé.";
+            if (motifRefus != null && !motifRefus.isBlank()) {
+                msg += " Motif : " + motifRefus;
+            }
+            notificationService.envoyerNotification(
+                    document.getUploadePar().getId(),
+                    msg,
+                    TypeNotification.NOUVEAU_DOCUMENT
+            );
+        }
+
+        return saved;
     }
 
     @Override

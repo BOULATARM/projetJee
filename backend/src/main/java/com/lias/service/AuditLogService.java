@@ -12,4 +12,5 @@ public interface AuditLogService {
     Page<AuditLog> search(String q, Pageable pageable);
     List<AuditLog> getByEntite(String entite);
     List<AuditLog> getByUtilisateur(String utilisateur);
+    List<AuditLog> getByMembreId(Long membreId);
 }

@@ -39,6 +39,7 @@ public class Reunion {
     private String pvPath;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50) DEFAULT 'PLANIFIEE'")
     private StatutReunion statut = StatutReunion.PLANIFIEE;
 
     @CreatedDate
@@ -59,7 +60,7 @@ public class Reunion {
     private List<ParticipantReunion> participants = new ArrayList<>();
 
     @OneToMany(mappedBy = "reunion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnoreProperties("reunion")
+    @JsonIgnoreProperties({"reunion", "uploadePar", "approuvePar"})
     @Builder.Default
     private List<Document> documents = new ArrayList<>();
 }

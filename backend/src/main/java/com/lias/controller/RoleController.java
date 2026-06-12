@@ -1,21 +1,19 @@
 package com.lias.controller;
 
-import com.lias.dto.response.RoleDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/roles")
 public class RoleController {
     @GetMapping
-    public ResponseEntity<List<RoleDto>> getRoles() {
+    public ResponseEntity<List<Map<String, Object>>> getRoles() {
         return ResponseEntity.ok(List.of(
-            new RoleDto(1, "PERMANENT", "Membre permanent"),
-            new RoleDto(2, "ASSOCIE",   "Membre associé"),
-            new RoleDto(3, "DOCTORANT", "Doctorant"),
-            new RoleDto(4, "RETRAITE",  "Retraité"),
-            new RoleDto(5, "ANCIEN",    "Ancien membre")
+            Map.of("id", 1, "code", "PERMANENT", "label", "Membre permanent"),
+            Map.of("id", 2, "code", "ASSOCIE",   "label", "Membre associe"),
+            Map.of("id", 3, "code", "DOCTORANT", "label", "Doctorant")
         ));
     }
 }

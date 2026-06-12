@@ -9,7 +9,7 @@ public interface DemandeAdhesionService {
     List<DemandeAdhesion> getPendingDemandes();
     List<DemandeAdhesion> getAllDemandes();
     DemandeAdhesion getDemandeById(Long id);
-    void accepterDemande(Long demandeId, Long directeurId);
+    void accepterDemande(Long demandeId, Long directeurId, Long equipeId);
     void refuserDemande(Long demandeId, Long directeurId, String commentaire);
     DemandeAdhesion uploadCV(Long demandeId, org.springframework.web.multipart.MultipartFile file);
     DemandeAdhesion uploadPhoto(Long demandeId, org.springframework.web.multipart.MultipartFile file);

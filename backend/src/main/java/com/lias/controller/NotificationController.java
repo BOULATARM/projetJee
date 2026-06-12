@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -37,5 +38,18 @@ public class NotificationController {
     public ResponseEntity<Void> marquerToutesLues(@AuthenticationPrincipal UserPrincipal user) {
         notificationService.marquerToutesLues(user.getMembreId());
         return ResponseEntity.ok().build();
+    }
+
+    // Alias utilisé par le Header frontend
+    @PutMapping("/tout-lire")
+    public ResponseEntity<Void> toutLire(@AuthenticationPrincipal UserPrincipal user) {
+        notificationService.marquerToutesLues(user.getMembreId());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/non-lues/count")
+    public ResponseEntity<Map<String, Long>> countNonLues(@AuthenticationPrincipal UserPrincipal user) {
+        long count = notificationService.getNotificationsNonLues(user.getMembreId()).size();
+        return ResponseEntity.ok(Map.of("count", count));
     }
 }

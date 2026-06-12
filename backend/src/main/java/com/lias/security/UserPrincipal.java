@@ -2,13 +2,15 @@ package com.lias.security;
 
 import com.lias.entity.Membre;
 import com.lias.enums.RoleSysteme;
+import com.lias.enums.StatutMembre;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 @Getter
 public class UserPrincipal implements UserDetails {
@@ -17,6 +19,7 @@ public class UserPrincipal implements UserDetails {
     private final String email;
     private final String password;
     private final RoleSysteme role;
+    private final StatutMembre statut;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserPrincipal(Membre membre) {
@@ -24,8 +27,13 @@ public class UserPrincipal implements UserDetails {
         this.email = membre.getEmail();
         this.password = membre.getMotDePasse();
         this.role = membre.getSystemRole();
-        this.authorities = Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + membre.getSystemRole().name()));
+        this.statut = membre.getStatut();
+        List<SimpleGrantedAuthority> auths = new ArrayList<>();
+        auths.add(new SimpleGrantedAuthority("ROLE_" + membre.getSystemRole().name()));
+        if (membre.getStatut() != null) {
+            auths.add(new SimpleGrantedAuthority("STATUT_" + membre.getStatut().name()));
+        }
+        this.authorities = auths;
     }
 
     @Override

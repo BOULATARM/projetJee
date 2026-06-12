@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { getStatutColor } from '@/lib/utils';
 import { membreService } from '@/services/membre.service';
 import { MembreResponse } from '@/types';
+import { Avatar } from '@/components/ui/Avatar';
 
 export default function PublicMembresPage() {
   const [membres, setMembres] = useState<MembreResponse[]>([]);
@@ -28,9 +29,7 @@ export default function PublicMembresPage() {
           {membres.map((m) => (
             <Link key={m.id} href={`/membres/${m.id}`}>
               <Card className="flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {m.prenom[0]}{m.nom[0]}
-                </div>
+                <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={56} />
                 <div>
                   <p className="font-semibold">{m.prenom} {m.nom}</p>
                   <Badge className={getStatutColor(m.statut)}>{m.statut}</Badge>

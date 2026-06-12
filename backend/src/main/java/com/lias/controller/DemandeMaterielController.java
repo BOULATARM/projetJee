@@ -1,5 +1,6 @@
 package com.lias.controller;
 
+import com.lias.dto.request.DemandeMaterielRequestDTO;
 import com.lias.entity.DemandeMateriel;
 import com.lias.security.UserPrincipal;
 import com.lias.service.DemandeMaterielService;
@@ -19,14 +20,14 @@ public class DemandeMaterielController {
     private final DemandeMaterielService demandeMaterielService;
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<DemandeMateriel> createDemande(@RequestBody DemandeMateriel demande,
+    @PreAuthorize("isAuthenticated() and !hasAuthority('STATUT_RETRAITE') and !hasAuthority('STATUT_ANCIEN')")
+    public ResponseEntity<DemandeMateriel> createDemande(@RequestBody DemandeMaterielRequestDTO dto,
                                                           @AuthenticationPrincipal UserPrincipal user) {
-        return ResponseEntity.ok(demandeMaterielService.creerDemande(demande, user.getMembreId()));
+        return ResponseEntity.ok(demandeMaterielService.creerDemande(dto, user.getMembreId()));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasRole('DIRECTEUR')")
     public ResponseEntity<List<DemandeMateriel>> getAllDemandes() {
         return ResponseEntity.ok(demandeMaterielService.getAllDemandes());
     }
@@ -38,7 +39,7 @@ public class DemandeMaterielController {
     }
 
     @PutMapping("/{id}/valider")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasRole('DIRECTEUR')")
     public ResponseEntity<Void> validerDemande(@PathVariable Long id,
                                                 @AuthenticationPrincipal UserPrincipal user) {
         demandeMaterielService.validerDemande(id, user.getMembreId());
@@ -46,7 +47,7 @@ public class DemandeMaterielController {
     }
 
     @PutMapping("/{id}/refuser")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasRole('DIRECTEUR')")
     public ResponseEntity<Void> refuserDemande(@PathVariable Long id,
                                                 @AuthenticationPrincipal UserPrincipal user) {
         demandeMaterielService.refuserDemande(id, user.getMembreId());

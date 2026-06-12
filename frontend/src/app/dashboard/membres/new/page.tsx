@@ -2,17 +2,31 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Equipe, StatutMembre } from '@/types';
+import { Equipe, StatutMembre, RoleSysteme } from '@/types';
 import api from '@/lib/api';
 import { ArrowLeft, Lock, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toArray } from '@/lib/normalize';
+import { useAuthStore } from '@/store/authStore';
 
 const STATUTS: StatutMembre[] = [StatutMembre.PERMANENT, StatutMembre.ASSOCIE, StatutMembre.DOCTORANT, StatutMembre.RETRAITE, StatutMembre.ANCIEN];
 
 export default function NewMembrePage() {
   const router = useRouter();
+  const { role } = useAuthStore();
+
+  // L'admin ne peut pas créer un membre directement
+  if (role === RoleSysteme.ADMIN) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-500">
+        <Lock size={36} className="opacity-30" />
+        <p className="font-medium">Accès refusé</p>
+        <p className="text-sm text-gray-400">L&apos;administrateur ne peut pas créer directement un membre.<br/>Les nouveaux membres rejoignent via une demande d&apos;adhésion.</p>
+        <Link href="/dashboard/membres" className="mt-2 text-primary text-sm hover:underline">← Retour aux membres</Link>
+      </div>
+    );
+  }
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);

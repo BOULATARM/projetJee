@@ -14,14 +14,61 @@ public class RapportAnnuelDTO {
     private LocalDateTime dateGeneration;
     private String generePar;
     private String statut;
-    private int nbPublications;
-    private int nbEvenements;
+
+    // Chiffres clés
     private int nbMembres;
     private int nbDoctorants;
-    private List<PublicationResponseDTO> publications;
-    private List<EvenementResponseDTO> evenements;
-    private List<MembreResponseDTO> membres;
+    private int nbPublications;
+    private int nbEvenements;
+    private int nbReunions;
+    private int nbConventions;
+
+    // Répartitions
     private Map<String, Long> publicationsParType;
     private Map<String, Long> membresParStatut;
-    private String activites;
+    private Map<String, Long> evenementsParType;
+
+    // Listes détaillées
+    private List<PubItem> publications;
+    private List<EvtItem> evenements;
+    private List<ReuItem> reunions;
+    private List<MemItem> membres;
+
+    @Data @Builder
+    public static class PubItem {
+        private String titre;
+        private String type;
+        private String revue;
+        private String conference;
+        private int annee;
+        private List<String> auteurs;
+    }
+
+    @Data @Builder
+    public static class EvtItem {
+        private String titre;
+        private String type;
+        private String statut;
+        private String dateDebut;
+        private String lieu;
+        private int nbParticipants;
+    }
+
+    @Data @Builder
+    public static class ReuItem {
+        private String titre;
+        private String date;
+        private String lieu;
+        private String statut;
+        private int nbParticipants;
+    }
+
+    @Data @Builder
+    public static class MemItem {
+        private String nom;
+        private String prenom;
+        private String statut;
+        private String email;
+        private String equipe;
+    }
 }

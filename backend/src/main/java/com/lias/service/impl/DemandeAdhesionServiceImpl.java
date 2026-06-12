@@ -83,7 +83,7 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
 
     @Override
     @Transactional
-    public void accepterDemande(Long demandeId, Long directeurId) {
+    public void accepterDemande(Long demandeId, Long directeurId, Long equipeId) {
         DemandeAdhesion demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new ResourceNotFoundException("DemandeAdhesion", "id", demandeId));
 
@@ -116,8 +116,9 @@ public class DemandeAdhesionServiceImpl implements DemandeAdhesionService {
 
         Membre membreSauve = membreRepository.save(nouveauMembre);
 
-        if (demande.getEquipeId() != null) {
-            equipeRepository.findById(demande.getEquipeId()).ifPresent(equipe -> {
+        Long resolvedEquipeId = equipeId != null ? equipeId : demande.getEquipeId();
+        if (resolvedEquipeId != null) {
+            equipeRepository.findById(resolvedEquipeId).ifPresent(equipe -> {
                 AffiliationMembre affiliation = AffiliationMembre.builder()
                         .membre(membreSauve)
                         .equipe(equipe)

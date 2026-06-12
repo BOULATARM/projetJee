@@ -9,5 +9,6 @@ public class OrganisateurDTO {
     private Long id;
     private String nom;
     private String prenom;
+    private String photo;
     private String roleOrganisation;
 }

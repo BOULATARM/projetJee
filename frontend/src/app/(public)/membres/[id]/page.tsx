@@ -8,6 +8,7 @@ import { getStatutColor, formatDate } from '@/lib/utils';
 import { membreService } from '@/services/membre.service';
 import { MembreDetail } from '@/types';
 import { ArrowLeft, Mail, Calendar, Building, BookOpen } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 
 export default function PublicMembreDetailPage() {
   const { id } = useParams();
@@ -55,8 +56,8 @@ export default function PublicMembreDetailPage() {
 
         <div className="grid md:grid-cols-3 gap-6">
           <Card className="md:col-span-1 text-center">
-            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-              {profil.prenom[0]}{profil.nom[0]}
+            <div className="mx-auto mb-4 w-fit">
+              <Avatar photo={profil.photo} nom={profil.nom} prenom={profil.prenom} size={96} />
             </div>
             <h1 className="text-xl font-bold text-gray-800">{profil.prenom} {profil.nom}</h1>
             <div className="flex justify-center gap-2 mt-2 flex-wrap">

@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface ConventionService {
     Convention creerConvention(ConventionRequestDTO dto);
+    Convention updateConvention(Long id, ConventionRequestDTO dto);
     List<Convention> getAllConventions();
     Convention getConventionById(Long id);
     void ajouterActivite(Long conventionId, ActiviteConvention activite);

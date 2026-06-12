@@ -16,7 +16,7 @@ export default function AdhesionPage() {
     nomFaculte: '',       // PERMANENT
     nomLaboOrigine: '',   // ASSOCIE
     biographie: '', centresInteret: '',
-    dateNaissance: '', dateEmbauche: '',
+    dateNaissance: '',
     equipeId: '' as number | '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -69,6 +69,7 @@ export default function AdhesionPage() {
       const payload = {
         ...rest,
         equipeId: form.equipeId !== '' ? form.equipeId : undefined,
+        dateNaissance: form.dateNaissance || undefined,
         publications: filledPubs.length > 0 ? filledPubs.join('\n') : undefined,
         nomFaculte:     form.typeMembreDemande === 'PERMANENT' ? form.nomFaculte     : undefined,
         nomLaboOrigine: form.typeMembreDemande === 'ASSOCIE'   ? form.nomLaboOrigine : undefined,
@@ -151,11 +152,8 @@ export default function AdhesionPage() {
             </div>
             {field('Email', <input type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={ic} />, true)}
 
-            {/* Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              {field('Date de naissance', <input type="date" required value={form.dateNaissance} onChange={e => setForm({ ...form, dateNaissance: e.target.value })} className={ic} />, true)}
-              {field("Date d'embauche", <input type="date" required value={form.dateEmbauche} onChange={e => setForm({ ...form, dateEmbauche: e.target.value })} className={ic} />, true)}
-            </div>
+            {/* Date de naissance */}
+            {field('Date de naissance', <input type="date" required value={form.dateNaissance} onChange={e => setForm({ ...form, dateNaissance: e.target.value })} className={ic} />, true)}
 
             {/* Mots de passe */}
             <div className="grid grid-cols-2 gap-4">

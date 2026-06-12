@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/Badge';
 import { getStatutColor } from '@/lib/utils';
 import { publicationService } from '@/services/publication.service';
 import { Equipe, MembreResponse, PublicationResponse, TypePublication } from '@/types';
-import { Search, PlusCircle, X, FileText } from 'lucide-react';
+import { Search, PlusCircle, X, FileText, UserPlus, GripVertical } from 'lucide-react';
 import api from '@/lib/api';
 import { toArray } from '@/lib/normalize';
 
@@ -26,6 +26,8 @@ export default function PublicationsPage() {
     titre: '', annee: new Date().getFullYear(), typePublication: TypePublication.ARTICLE,
     resume: '', doi: '', lienUrl: '', revue: '', conference: '',
   });
+  const [selectedAuteurs, setSelectedAuteurs] = useState<MembreResponse[]>([]);
+  const [auteurSearch, setAuteurSearch] = useState('');
   const [fichierPdf, setFichierPdf] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -61,15 +63,22 @@ export default function PublicationsPage() {
     setError('');
     try {
       const formData = new FormData();
-      formData.append('data', JSON.stringify({ ...form }));
+      const auteurIds = selectedAuteurs.map(m => m.id);
+      const ordresAuteurs = selectedAuteurs.map((_, i) => i + 1);
+      formData.append('data', new Blob([JSON.stringify({ ...form, auteurIds, ordresAuteurs })], { type: 'application/json' }));
       formData.append('fichierPdf', fichierPdf);
-      await api.post('/publications', formData);
+      await api.post('/publications', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setForm({ titre: '', annee: new Date().getFullYear(), typePublication: TypePublication.ARTICLE, resume: '', doi: '', lienUrl: '', revue: '', conference: '' });
+      setSelectedAuteurs([]);
+      setAuteurSearch('');
       setFichierPdf(null);
       setShowForm(false);
       load();
-    } catch {
-      setError('Erreur lors de la création.');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr?.response?.data?.message || 'Erreur lors de la création de la publication.');
     } finally {
       setSaving(false);
     }
@@ -104,13 +113,6 @@ export default function PublicationsPage() {
                 className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none" />
             </div>
             <div>
-              <label className="block text-sm text-gray-500 mb-1">Type *</label>
-              <select value={form.typePublication} onChange={e => setForm({ ...form, typePublication: e.target.value as TypePublication })}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none">
-                {TYPES_PUB.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
               <input value={form.doi} onChange={e => setForm({ ...form, doi: e.target.value })}
                 placeholder="DOI (ex: 10.xxxx/...)" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none" />
             </div>
@@ -130,6 +132,82 @@ export default function PublicationsPage() {
               <textarea rows={3} value={form.resume} onChange={e => setForm({ ...form, resume: e.target.value })}
                 placeholder="Résumé" className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary outline-none" />
             </div>
+            {/* Auteurs */}
+            <div className="md:col-span-2">
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-1">
+                <UserPlus size={14} /> Auteurs <span className="text-gray-400 text-xs">(optionnel — vous pouvez vous inclure)</span>
+              </label>
+
+              {/* Recherche + ajout */}
+              <div className="flex gap-2 mb-2">
+                <div className="relative flex-1">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={auteurSearch}
+                    onChange={e => setAuteurSearch(e.target.value)}
+                    placeholder="Rechercher un membre..."
+                    className="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Dropdown des résultats */}
+              {auteurSearch.trim() && (
+                <div className="border rounded-lg bg-white shadow-sm max-h-40 overflow-y-auto mb-2">
+                  {membres
+                    .filter(m =>
+                      (`${m.prenom} ${m.nom}`).toLowerCase().includes(auteurSearch.toLowerCase()) &&
+                      !selectedAuteurs.some(a => a.id === m.id)
+                    )
+                    .slice(0, 8)
+                    .map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedAuteurs(prev => [...prev, m]);
+                          setAuteurSearch('');
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center gap-2"
+                      >
+                        <UserPlus size={14} className="text-primary shrink-0" />
+                        <span>{m.prenom} {m.nom}</span>
+                        {m.statut && <span className="text-xs text-gray-400 ml-auto">{m.statut}</span>}
+                      </button>
+                    ))}
+                  {membres.filter(m =>
+                    (`${m.prenom} ${m.nom}`).toLowerCase().includes(auteurSearch.toLowerCase()) &&
+                    !selectedAuteurs.some(a => a.id === m.id)
+                  ).length === 0 && (
+                    <p className="px-3 py-2 text-sm text-gray-400">Aucun résultat</p>
+                  )}
+                </div>
+              )}
+
+              {/* Auteurs sélectionnés */}
+              {selectedAuteurs.length > 0 && (
+                <div className="space-y-1">
+                  {selectedAuteurs.map((m, i) => (
+                    <div key={m.id} className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 text-sm">
+                      <GripVertical size={14} className="text-gray-400 shrink-0" />
+                      <span className="text-primary font-medium text-xs w-5 shrink-0">#{i + 1}</span>
+                      <span className="flex-1">{m.prenom} {m.nom}</span>
+                      {m.statut && <span className="text-xs text-gray-400">{m.statut}</span>}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAuteurs(prev => prev.filter(a => a.id !== m.id))}
+                        className="text-red-400 hover:text-red-600 ml-1"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-400 mt-1">L&apos;auteur #1 sera marqué comme auteur correspondant</p>
+                </div>
+              )}
+            </div>
+
             {/* PDF obligatoire */}
             <div className="md:col-span-2">
               <label className="block text-sm text-gray-600 mb-1">

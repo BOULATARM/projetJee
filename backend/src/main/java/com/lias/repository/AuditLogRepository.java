@@ -18,4 +18,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<AuditLog> findByDateBetweenOrderByDateDesc(LocalDateTime from, LocalDateTime to);
     Page<AuditLog> findByEntiteContainingIgnoreCaseOrUtilisateurContainingIgnoreCaseOrderByDateDesc(
             String entite, String utilisateur, Pageable pageable);
+
+    List<AuditLog> findByMembreIdOrderByDateDesc(Long membreId);
+
+    List<AuditLog> findByActionInOrderByDateDesc(List<String> actions);
 }

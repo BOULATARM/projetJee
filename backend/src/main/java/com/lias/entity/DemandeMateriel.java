@@ -4,6 +4,7 @@ import com.lias.enums.StatutDemande;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,6 +30,14 @@ public class DemandeMateriel {
     private String justification;
 
     private Integer quantite = 1;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "materiel_demande_id")
+    @JsonIgnoreProperties({"distributions", "historique", "demandesMateriel"})
+    private Materiel materielDemande;
+
+    private LocalDate datePriseSouhaitee;
+    private LocalDate dateRetourPrevue;
 
     @Enumerated(EnumType.STRING)
     private StatutDemande statut = StatutDemande.PENDING;

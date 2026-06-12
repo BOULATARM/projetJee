@@ -1,9 +1,11 @@
 package com.lias.service.impl;
 
+import com.lias.entity.AuditLog;
 import com.lias.entity.Mandat;
 import com.lias.entity.Membre;
 import com.lias.enums.RoleSysteme;
 import com.lias.exception.ResourceNotFoundException;
+import com.lias.repository.AuditLogRepository;
 import com.lias.repository.LaboratoireRepository;
 import com.lias.repository.MandatRepository;
 import com.lias.repository.MembreRepository;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -22,6 +25,7 @@ public class MandatServiceImpl implements MandatService {
     private final MandatRepository mandatRepository;
     private final MembreRepository membreRepository;
     private final LaboratoireRepository laboratoireRepository;
+    private final AuditLogRepository auditLogRepository;
 
     @Override
     public Mandat getMandatActif() {
@@ -31,7 +35,7 @@ public class MandatServiceImpl implements MandatService {
 
     @Override
     @Transactional
-    public Mandat creerMandat(Long directeurId, Long viceDirecteurId, LocalDate dateDebut) {
+    public Mandat creerMandat(Long directeurId, Long viceDirecteurId, LocalDate dateDebut, String adminEmail) {
         Membre directeur = membreRepository.findById(directeurId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", directeurId));
         Membre viceDirecteur = viceDirecteurId != null ?
@@ -64,12 +68,25 @@ public class MandatServiceImpl implements MandatService {
                 .viceDirecteur(viceDirecteur)
                 .build();
 
-        return mandatRepository.save(mandat);
+        Mandat saved = mandatRepository.save(mandat);
+
+        auditLogRepository.save(AuditLog.builder()
+                .entite("Mandat").action("CREATION_MANDAT")
+                .methode("POST /mandats")
+                .utilisateur(adminEmail)
+                .membreId(directeurId)
+                .date(LocalDateTime.now())
+                .details("Nouveau mandat créé — Directeur: " + directeur.getPrenom() + " " + directeur.getNom()
+                        + (viceDirecteur != null ? ", Vice-directeur: " + viceDirecteur.getPrenom() + " " + viceDirecteur.getNom() : "")
+                        + " — Début: " + dateDebut)
+                .build());
+
+        return saved;
     }
 
     @Override
     @Transactional
-    public void cloturerMandat(Long mandatId, LocalDate dateFin) {
+    public void cloturerMandat(Long mandatId, LocalDate dateFin, String adminEmail) {
         Mandat mandat = mandatRepository.findById(mandatId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mandat", "id", mandatId));
         mandat.setActif(false);
@@ -85,27 +102,19 @@ public class MandatServiceImpl implements MandatService {
         }
 
         mandatRepository.save(mandat);
+
+        auditLogRepository.save(AuditLog.builder()
+                .entite("Mandat").action("CLOTURE_MANDAT")
+                .methode("PUT /mandats/" + mandatId + "/cloture")
+                .utilisateur(adminEmail)
+                .membreId(mandatId)
+                .date(LocalDateTime.now())
+                .details("Mandat #" + mandatId + " clôturé — Date fin: " + dateFin)
+                .build());
     }
 
     @Override
     public List<Mandat> getHistoriqueMandats() {
-        return mandatRepository.findAll();
-    }
-
-    @Override
-    @Transactional
-    public Mandat setChefsEquipe(Long mandatId, java.util.List<Long> membreIds) {
-        Mandat mandat = mandatRepository.findById(mandatId)
-                .orElseThrow(() -> new ResourceNotFoundException("Mandat", "id", mandatId));
-        List<com.lias.entity.Membre> chefs = membreIds.stream()
-                .map(id -> membreRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", id)))
-                .collect(java.util.stream.Collectors.toList());
-        mandat.setChefsEquipe(chefs);
-        chefs.forEach(c -> {
-            c.setSystemRole(com.lias.enums.RoleSysteme.CHEF_EQUIPE);
-            membreRepository.save(c);
-        });
-        return mandatRepository.save(mandat);
+        return mandatRepository.findAllByOrderByDateDebutDesc();
     }
 }

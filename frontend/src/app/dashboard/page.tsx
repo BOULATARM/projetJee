@@ -10,9 +10,118 @@ import { evenementService } from '@/services/evenement.service';
 import { publicationService } from '@/services/publication.service';
 import { membreService } from '@/services/membre.service';
 import { DashboardStats, EvenementResponse, PublicationResponse, RoleSysteme, StatutMembre, MembreDetail } from '@/types';
-import { Users, BookOpen, Calendar, GraduationCap, ArrowRight, Shield, FileText, ClipboardCheck, Briefcase, Bell } from 'lucide-react';
+import { Users, BookOpen, Calendar, GraduationCap, ArrowRight, Shield, FileText, ClipboardCheck, Briefcase, Bell, History, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import api from '@/lib/api';
 import { toArray } from '@/lib/normalize';
+
+// ─── Composant Participation Événements (DOCTORANT / ASSOCIÉ) ───────────────
+interface ParticipationInfo {
+  statut: 'EN_ATTENTE' | 'CONFIRME' | 'REFUSE';
+}
+
+function EvenementsParticipation({ evenements, membreId, statutMembre }: {
+  evenements: EvenementResponse[];
+  membreId: number | null;
+  statutMembre: string;
+}) {
+  const [participations, setParticipations] = useState<Record<number, ParticipationInfo>>({});
+  const [loading, setLoading] = useState<Record<number, boolean>>({});
+
+  // Initialiser les participations à partir des données déjà dans les événements
+  useEffect(() => {
+    const map: Record<number, ParticipationInfo> = {};
+    evenements.forEach(evt => {
+      const parts = (evt as any).participations as Array<{ membreId: number; statut: string }> | undefined;
+      if (parts && membreId) {
+        const mine = parts.find(p => p.membreId === membreId);
+        if (mine) map[evt.id] = { statut: mine.statut as ParticipationInfo['statut'] };
+      }
+    });
+    setParticipations(map);
+  }, [evenements, membreId]);
+
+  const handleParticiper = async (evtId: number) => {
+    setLoading(prev => ({ ...prev, [evtId]: true }));
+    try {
+      const res = await api.post(`/evenements/${evtId}/participer`);
+      setParticipations(prev => ({ ...prev, [evtId]: { statut: res.data.statut } }));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Erreur lors de la demande.');
+    } finally {
+      setLoading(prev => ({ ...prev, [evtId]: false }));
+    }
+  };
+
+  const disponibles = evenements.filter(e => e.statut !== 'ANNULE' && e.statut !== 'TERMINE');
+
+  const statutBadge = (evtId: number) => {
+    const p = participations[evtId];
+    if (!p) return null;
+    if (p.statut === 'CONFIRME') return (
+      <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+        <CheckCircle size={13} /> Confirmé
+      </span>
+    );
+    if (p.statut === 'EN_ATTENTE') return (
+      <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium">
+        <AlertCircle size={13} /> En attente
+      </span>
+    );
+    return (
+      <span className="flex items-center gap-1 text-xs text-red-500 font-medium">
+        <XCircle size={13} /> Refusé
+      </span>
+    );
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-heading font-semibold flex items-center gap-2">
+          <Calendar size={16} className="text-purple-500" /> Événements disponibles
+        </h2>
+        <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">
+          Voir tout <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      {statutMembre === 'ASSOCIE' || statutMembre === 'DOCTORANT' ? (
+        <div className="flex items-center gap-2 text-xs text-yellow-700 bg-yellow-50 px-3 py-2 rounded-lg mb-3">
+          <AlertCircle size={13} /> Votre participation nécessite la confirmation du directeur du laboratoire.
+        </div>
+      ) : null}
+
+      {disponibles.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-4">Aucun événement disponible.</p>
+      ) : (
+        <div className="space-y-2">
+          {disponibles.slice(0, 5).map(e => {
+            const myPart = participations[e.id];
+            return (
+              <div key={e.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 truncate">{e.titre}</p>
+                  <p className="text-xs text-gray-500">{formatDate(e.dateDebut)} {e.lieu ? `— ${e.lieu}` : ''}</p>
+                </div>
+                <div className="ml-3 shrink-0">
+                  {myPart ? statutBadge(e.id) : (
+                    <button
+                      onClick={() => handleParticiper(e.id)}
+                      disabled={loading[e.id]}
+                      className="bg-primary text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {loading[e.id] ? '...' : 'Participer'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
+  );
+}
 
 // ─── Dashboard ADMIN / DIRECTEUR ───────────────────────────────────────────
 function DashboardAdmin({ stats, evenements, publications }: {
@@ -90,6 +199,98 @@ function DashboardAdmin({ stats, evenements, publications }: {
   );
 }
 
+const ACTION_COLORS: Record<string, string> = {
+  CREATE: 'bg-green-100 text-green-700',
+  UPDATE: 'bg-blue-100 text-blue-700',
+  DELETE: 'bg-red-100 text-red-700',
+  ACTION: 'bg-yellow-100 text-yellow-700',
+};
+
+interface AuditLog {
+  id: number;
+  entite: string;
+  action: string;
+  utilisateur: string;
+  date: string;
+  details: string;
+}
+
+function formatAuditDate(iso: string) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── Dashboard DIRECTEUR ────────────────────────────────────────────────────
+function DashboardDirecteur({ stats }: { stats: DashboardStats | null }) {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+
+  useEffect(() => {
+    api.get('/audit-logs?page=0&size=15').then(r => {
+      setLogs((r.data?.content || []) as AuditLog[]);
+    }).catch(() => {});
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Link href="/dashboard/equipes">
+          <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="bg-orange-500 p-3 rounded-lg shrink-0"><GraduationCap size={22} className="text-white" /></div>
+            <div><p className="text-xl font-bold text-gray-800">{stats?.nbEquipes || 0}</p><p className="text-xs text-gray-500">Équipes</p></div>
+          </Card>
+        </Link>
+        <Link href="/dashboard/membres">
+          <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="bg-blue-500 p-3 rounded-lg shrink-0"><Users size={22} className="text-white" /></div>
+            <div><p className="text-xl font-bold text-gray-800">{stats?.nbMembres || 0}</p><p className="text-xs text-gray-500">Membres actifs</p></div>
+          </Card>
+        </Link>
+        <Link href="/dashboard/publications">
+          <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
+            <div className="bg-green-500 p-3 rounded-lg shrink-0"><BookOpen size={22} className="text-white" /></div>
+            <div><p className="text-xl font-bold text-gray-800">{stats?.nbPublications || 0}</p><p className="text-xs text-gray-500">Publications</p></div>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Historique des actions */}
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading font-semibold flex items-center gap-2">
+            <History size={18} className="text-primary" /> Historique des actions récentes
+          </h2>
+          <Link href="/dashboard/audit-logs" className="text-primary text-sm flex items-center gap-1 hover:underline">
+            Voir tout <ArrowRight size={14} />
+          </Link>
+        </div>
+        {logs.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Aucune action enregistrée</p>
+        ) : (
+          <div className="space-y-2">
+            {logs.map(log => (
+              <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="shrink-0 mt-0.5">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-600'}`}>
+                    {log.action}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 font-medium truncate">{log.entite}</p>
+                  {log.details && <p className="text-xs text-gray-500 truncate">{log.details}</p>}
+                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                    <Clock size={10} /> {log.utilisateur} — {formatAuditDate(log.date)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 // ─── Dashboard VICE_DIRECTEUR / CHEF_EQUIPE ─────────────────────────────────
 function DashboardChef({ stats, evenements, publications }: {
   stats: DashboardStats | null;
@@ -158,13 +359,15 @@ function DashboardPermanent({ evenements, publications, profil }: {
   publications: PublicationResponse[];
   profil: MembreDetail | null;
 }) {
-  const myPubs = publications.filter(p => p.auteurs?.some(a => a.id === profil?.id));
+  const { membreId } = useAuthStore();
+  const userId = profil?.id ?? membreId;
+  const myPubs = publications.filter(p => p.auteurs?.some(a => Number(a.id) === Number(userId)));
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="flex items-center gap-3">
           <div className="bg-green-500 p-3 rounded-lg"><BookOpen size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{profil?.publications?.length || 0}</p><p className="text-xs text-gray-500">Mes publications</p></div>
+          <div><p className="text-xl font-bold">{myPubs.length}</p><p className="text-xs text-gray-500">Mes publications</p></div>
         </Card>
         <Card className="flex items-center gap-3">
           <div className="bg-purple-500 p-3 rounded-lg"><Calendar size={22} className="text-white" /></div>
@@ -193,7 +396,7 @@ function DashboardPermanent({ evenements, publications, profil }: {
             <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
           </div>
           <div className="space-y-2">
-            {(myPubs.length > 0 ? myPubs : publications).slice(0, 4).map(p => (
+            {myPubs.slice(0, 4).map(p => (
               <div key={p.id} className="p-2 bg-gray-50 rounded">
                 <p className="text-sm font-medium">{p.titre}</p>
                 <div className="flex gap-2 mt-1">
@@ -202,6 +405,9 @@ function DashboardPermanent({ evenements, publications, profil }: {
                 </div>
               </div>
             ))}
+            {myPubs.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-3">Aucune publication pour l&apos;instant</p>
+            )}
           </div>
         </Card>
         <Card>
@@ -227,6 +433,7 @@ function DashboardAssocie({ evenements, publications }: {
   evenements: EvenementResponse[];
   publications: PublicationResponse[];
 }) {
+  const { membreId } = useAuthStore();
   return (
     <div className="space-y-6">
       <Card className="border-l-4 border-purple-500 bg-purple-50">
@@ -246,50 +453,39 @@ function DashboardAssocie({ evenements, publications }: {
         </Card>
         <Card className="flex items-center gap-3">
           <div className="bg-purple-500 p-3 rounded-lg"><Calendar size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{evenements.length}</p><p className="text-xs text-gray-500">Événements</p></div>
+          <div><p className="text-xl font-bold">{evenements.filter(e => e.statut !== 'ANNULE').length}</p><p className="text-xs text-gray-500">Événements</p></div>
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <div className="flex justify-between mb-3">
-            <h2 className="font-heading font-semibold">Publications récentes</h2>
-            <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
-          </div>
-          <div className="space-y-2">
-            {publications.slice(0, 5).map(p => (
-              <div key={p.id} className="p-2 bg-gray-50 rounded">
-                <p className="text-sm font-medium">{p.titre}</p>
-                <Badge className="bg-blue-100 text-blue-800 text-xs mt-1">{p.typePub}</Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <div className="flex justify-between mb-3">
-            <h2 className="font-heading font-semibold">Événements</h2>
-            <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
-          </div>
-          <div className="space-y-2">
-            {evenements.slice(0, 5).map(e => (
-              <div key={e.id} className="p-2 bg-gray-50 rounded flex justify-between">
-                <div><p className="text-sm font-medium">{e.titre}</p><p className="text-xs text-gray-500">{formatDate(e.dateDebut)}</p></div>
-                <Badge className={getStatutColor(e.statut)}>{e.statut}</Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+      <EvenementsParticipation evenements={evenements} membreId={membreId} statutMembre="ASSOCIE" />
+
+      <Card>
+        <div className="flex justify-between mb-3">
+          <h2 className="font-heading font-semibold">Publications récentes</h2>
+          <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
+        </div>
+        <div className="space-y-2">
+          {publications.slice(0, 5).map(p => (
+            <div key={p.id} className="p-2 bg-gray-50 rounded">
+              <p className="text-sm font-medium">{p.titre}</p>
+              <Badge className="bg-blue-100 text-blue-800 text-xs mt-1">{p.typePub}</Badge>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
 
 // ─── Dashboard DOCTORANT ─────────────────────────────────────────────────────
-function DashboardDoctorant({ publications, profil }: {
+function DashboardDoctorant({ publications, profil, evenements }: {
   publications: PublicationResponse[];
   profil: MembreDetail | null;
+  evenements: EvenementResponse[];
 }) {
-  const myPubs = publications.filter(p => p.auteurs?.some(a => a.id === profil?.id));
+  const { membreId } = useAuthStore();
+  const userId = profil?.id ?? membreId;
+  const myPubs = publications.filter(p => p.auteurs?.some(a => Number(a.id) === Number(userId)));
   return (
     <div className="space-y-6">
       <Card className="border-l-4 border-green-500 bg-green-50">
@@ -297,7 +493,7 @@ function DashboardDoctorant({ publications, profil }: {
           <GraduationCap size={20} className="text-green-600" />
           <div>
             <p className="font-semibold text-gray-800">Doctorant</p>
-            <p className="text-sm text-gray-600">Accès : ajouter et consulter des publications · Mon profil</p>
+            <p className="text-sm text-gray-600">Accès : ajouter et consulter des publications · Mon profil · Événements</p>
           </div>
         </div>
       </Card>
@@ -320,6 +516,8 @@ function DashboardDoctorant({ publications, profil }: {
           <p className="text-xs text-gray-400">Depuis {formatDate(profil.affiliations.find(a => a.actif)?.dateDebut || '')}</p>
         </Card>
       )}
+
+      <EvenementsParticipation evenements={evenements} membreId={membreId} statutMembre="DOCTORANT" />
 
       <Card>
         <div className="flex justify-between mb-3">
@@ -362,7 +560,7 @@ export default function DashboardPage() {
     if (membreId) {
       membreService.getById(membreId).then(setProfil).catch(() => {});
     }
-    if (role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR) {
+    if (role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR || role === RoleSysteme.CHEF_EQUIPE) {
       statsService.getDashboard().then(setStats).catch(() => {});
     }
   }, [role, membreId]);
@@ -405,7 +603,7 @@ export default function DashboardPage() {
         <DashboardAssocie evenements={evenements} publications={publications} />
       )}
       {role === RoleSysteme.MEMBRE && statut === StatutMembre.DOCTORANT && (
-        <DashboardDoctorant publications={publications} profil={profil} />
+        <DashboardDoctorant publications={publications} profil={profil} evenements={evenements} />
       )}
     </div>
   );

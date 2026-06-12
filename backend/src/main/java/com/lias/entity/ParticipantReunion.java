@@ -22,7 +22,7 @@ public class ParticipantReunion {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "membre_id")
-    @JsonIgnoreProperties({"affiliations", "roles", "participationsReunions"})
+    @JsonIgnoreProperties({"affiliations", "roles", "participationsReunions", "documentsUploades", "demandesAdhesion", "demandesMateriel", "mandats"})
     private Membre membre;
 
     private Boolean present;

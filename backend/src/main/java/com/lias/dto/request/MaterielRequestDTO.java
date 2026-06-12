@@ -1,5 +1,6 @@
 package com.lias.dto.request;
 
+import com.lias.enums.TypeMateriel;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.time.LocalDate;
@@ -11,4 +12,5 @@ public class MaterielRequestDTO {
     private Integer quantiteTotale;
     private String categorie;
     private LocalDate dateArrivage;
+    private TypeMateriel typeMateriel;
 }

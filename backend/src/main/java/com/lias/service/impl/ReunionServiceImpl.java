@@ -1,11 +1,16 @@
 package com.lias.service.impl;
 
 import com.lias.dto.request.ReunionRequestDTO;
+import com.lias.entity.Document;
 import com.lias.entity.Membre;
 import com.lias.entity.ParticipantReunion;
 import com.lias.entity.Reunion;
+import com.lias.enums.StatutDocument;
+import com.lias.enums.StatutReunion;
+import com.lias.enums.TypeDocument;
 import com.lias.enums.TypeNotification;
 import com.lias.exception.ResourceNotFoundException;
+import com.lias.repository.DocumentRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.repository.ParticipantReunionRepository;
 import com.lias.repository.ReunionRepository;
@@ -28,6 +33,7 @@ public class ReunionServiceImpl implements ReunionService {
     private final ReunionRepository reunionRepository;
     private final MembreRepository membreRepository;
     private final ParticipantReunionRepository participantRepository;
+    private final DocumentRepository documentRepository;
     private final NotificationService notificationService;
     private final FileStorageService fileStorageService;
 
@@ -53,6 +59,7 @@ public class ReunionServiceImpl implements ReunionService {
                 .dateReunion(dto.getDateReunion())
                 .lieu(dto.getLieu())
                 .ordreJour(dto.getOrdreJour())
+                .statut(StatutReunion.PLANIFIEE)
                 .creePar(creePar)
                 .participants(new ArrayList<>())
                 .build();
@@ -85,12 +92,31 @@ public class ReunionServiceImpl implements ReunionService {
 
     @Override
     @Transactional
-    public Reunion uploadPV(Long reunionId, MultipartFile file) {
+    public void uploadPV(Long reunionId, MultipartFile file, Long membreId) {
         Reunion reunion = reunionRepository.findById(reunionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reunion", "id", reunionId));
         String path = fileStorageService.uploadFile(file, "pv");
         reunion.setPvPath(path);
-        return reunionRepository.save(reunion);
+        reunionRepository.save(reunion);
+
+        // Enregistrer aussi comme Document lié à la réunion
+        Membre uploader = membreRepository.findById(membreId).orElse(null);
+        boolean alreadySaved = documentRepository.findByReunionId(reunionId).stream()
+                .anyMatch(d -> d.getTypeDocument() == TypeDocument.PV_REUNION);
+        if (!alreadySaved) {
+            Document doc = Document.builder()
+                    .nom("PV - " + reunion.getTitre())
+                    .typeDocument(TypeDocument.PV_REUNION)
+                    .cheminFichier(path)
+                    .reunion(reunion)
+                    .uploadePar(uploader)
+                    .dateUpload(java.time.LocalDateTime.now())
+                    .statut(StatutDocument.APPROUVE)
+                    .mimeType("application/pdf")
+                    .taille(file.getSize())
+                    .build();
+            documentRepository.save(doc);
+        }
     }
 
     @Override
@@ -108,7 +134,6 @@ public class ReunionServiceImpl implements ReunionService {
     public void marquerPresence(Long reunionId, Long membreId, Boolean present) {
         Reunion reunion = reunionRepository.findById(reunionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Reunion", "id", reunionId));
-
         reunion.getParticipants().stream()
                 .filter(p -> p.getMembre().getId().equals(membreId))
                 .findFirst()
@@ -116,5 +141,35 @@ public class ReunionServiceImpl implements ReunionService {
                     p.setPresent(present);
                     participantRepository.save(p);
                 });
+    }
+
+    @Override
+    public List<ParticipantReunion> getParticipants(Long reunionId) {
+        return participantRepository.findByReunionId(reunionId);
+    }
+
+    @Override
+    @Transactional
+    public void ajouterParticipant(Long reunionId, Long membreId) {
+        if (participantRepository.existsByReunionIdAndMembreId(reunionId, membreId)) return;
+        Reunion reunion = reunionRepository.findById(reunionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reunion", "id", reunionId));
+        Membre membre = membreRepository.findById(membreId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", membreId));
+        ParticipantReunion pr = ParticipantReunion.builder()
+                .reunion(reunion)
+                .membre(membre)
+                .present(false)
+                .build();
+        participantRepository.save(pr);
+        String message = "Vous avez été convié(e) à la réunion \"" + reunion.getTitre() + "\" le "
+                + reunion.getDateReunion() + (reunion.getLieu() != null ? " au " + reunion.getLieu() : "") + ".";
+        notificationService.envoyerNotification(membreId, message, TypeNotification.REUNION);
+    }
+
+    @Override
+    @Transactional
+    public void retirerParticipant(Long reunionId, Long membreId) {
+        participantRepository.deleteByReunionIdAndMembreId(reunionId, membreId);
     }
 }

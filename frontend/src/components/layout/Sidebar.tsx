@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { RoleSysteme, StatutMembre } from '@/types';
 import {
   LayoutDashboard, Users, BookOpen, Calendar, FolderOpen, Box, Handshake,
-  MessageSquare, Bell, BarChart3, FileText, ClipboardCheck, Shield, Briefcase,
+  MessageCircle, Bell, BarChart3, FileText, ClipboardCheck, Shield, Briefcase,
   ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList, Search, ScrollText,
 } from 'lucide-react';
 
@@ -21,37 +21,44 @@ type MenuItem = {
 const allMenuItems: MenuItem[] = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
   { href: '/dashboard/retraite', label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['RETRAITE'] },
-  { href: '/dashboard/ancien', label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ANCIEN'] },
+  { href: '/dashboard/ancien',  label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ANCIEN'] },
+  { href: '/dashboard/associe',   label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ASSOCIE'] },
+  { href: '/dashboard/doctorant', label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['DOCTORANT'] },
   { href: '/dashboard/profil', label: 'Mon profil', icon: Users, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
   { href: '/dashboard/recherche', label: 'Recherche', icon: Search, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
 
-  // Membres (non doctorants)
+  // Membres
   { href: '/dashboard/membres', label: 'Membres', icon: Users, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE'] },
+
+  // Équipes — DIRECTEUR uniquement (ADMIN n'y a pas accès)
   { href: '/dashboard/equipes', label: 'Équipes', icon: GraduationCap, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
 
-  // Publications (actifs seulement — lecture seule pour retraité/ancien dans leur propre page)
+  // Publications
   { href: '/dashboard/publications', label: 'Publications', icon: BookOpen, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
 
-  // Événements (associés + permanents)
-  { href: '/dashboard/evenements', label: 'Événements', icon: Calendar, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE'] },
-  { href: '/dashboard/calendrier', label: 'Calendrier', icon: CalendarClock, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE'] },
+  // Événements
+  { href: '/dashboard/evenements', label: 'Événements', icon: Calendar, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/calendrier', label: 'Calendrier', icon: CalendarClock, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
 
   // Modules internes — permanents uniquement
   { href: '/dashboard/reunions', label: 'Réunions', icon: Briefcase, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
   { href: '/dashboard/documents', label: 'Documents', icon: FolderOpen, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
   { href: '/dashboard/conventions', label: 'Conventions', icon: Handshake, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/discussions', label: 'Discussions', icon: MessageSquare, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/messages', label: 'Messagerie', icon: MessageCircle, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
   { href: '/dashboard/demandes-materiel', label: 'Demandes matériel', icon: ClipboardList, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
 
   // Admin/Directeur seulement
+
+  { href: '/dashboard/documents-approbation', label: 'Approbation documents', icon: ClipboardCheck, roles: ['DIRECTEUR', 'ADMIN'] },
   { href: '/dashboard/materiel', label: 'Matériel', icon: Box, roles: ['ADMIN', 'DIRECTEUR'] },
   { href: '/dashboard/demandes-adhesion', label: 'Adhésions', icon: ClipboardCheck, roles: ['ADMIN', 'DIRECTEUR'] },
   { href: '/dashboard/rapport-annuel', label: 'Rapport annuel', icon: FileText, roles: ['ADMIN', 'DIRECTEUR'] },
   { href: '/dashboard/statistiques', label: 'Statistiques', icon: BarChart3, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/admin/comptes', label: 'Comptes', icon: Users, roles: ['ADMIN'] },
   { href: '/dashboard/mandats', label: 'Mandats', icon: Shield, roles: ['ADMIN'] },
   { href: '/dashboard/audit-logs', label: 'Journal d\'audit', icon: ScrollText, roles: ['ADMIN'] },
 
-  // Notifications (membres actifs seulement)
+  // Notifications
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
 ];
 
@@ -62,6 +69,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { role, statut } = useAuthStore();
 
   const isAdmin = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR || role === RoleSysteme.CHEF_EQUIPE;
+  // DIRECTEUR has no statut filter — they only see items in their roles list
 
   const filteredItems = allMenuItems.filter(item => {
     if (!item.roles.includes(role || 'MEMBRE')) return false;

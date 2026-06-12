@@ -8,6 +8,7 @@ import { getStatutColor, formatDateTime } from '@/lib/utils';
 import { Reunion, MembreResponse, Document, RoleSysteme } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { ArrowLeft, Download, FileText, MapPin, Upload, UserPlus, UserMinus } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import api from '@/lib/api';
 import { membreService } from '@/services/membre.service';
 import { toArray } from '@/lib/normalize';
@@ -15,7 +16,7 @@ import { toArray } from '@/lib/normalize';
 export default function ReunionDetailPage() {
   const { id } = useParams();
   const [reunion, setReunion] = useState<Reunion | null>(null);
-  const [participants, setParticipants] = useState<MembreResponse[]>([]);
+  const [participants, setParticipants] = useState<{ id: number; membre: MembreResponse; present: boolean }[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [allMembres, setAllMembres] = useState<MembreResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +25,7 @@ export default function ReunionDetailPage() {
   const [uploadingPV, setUploadingPV] = useState(false);
   const [addMembreId, setAddMembreId] = useState('');
   const { role } = useAuthStore();
-  const canManage = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
+  const canManage = role === RoleSysteme.DIRECTEUR;
 
   const load = async () => {
     if (!id) return;
@@ -33,11 +34,15 @@ export default function ReunionDetailPage() {
       const res = await api.get(`/reunions/${id}`);
       setReunion(res.data);
       setCompteRendu(res.data.compteRendu || '');
-      // Load participants
       const partRes = await api.get(`/reunions/${id}/presences`).catch(() => ({ data: [] }));
-      setParticipants(toArray(partRes.data));
+      // Map flat DTO back to nested structure used by the UI
+      setParticipants(toArray(partRes.data).map((p: { id: number; membreId: number; prenom: string; nom: string; photo?: string; present: boolean }) => ({
+        id: p.id,
+        present: p.present,
+        membre: { id: p.membreId, prenom: p.prenom, nom: p.nom, photo: p.photo },
+      })));
       // Load documents linked to this reunion
-      const docRes = await api.get('/documents', { params: { reunionId: id } }).catch(() => ({ data: [] }));
+      const docRes = await api.get(`/documents/reunion/${id}`).catch(() => ({ data: [] }));
       setDocuments(toArray(docRes.data));
     } finally {
       setLoading(false);
@@ -62,7 +67,9 @@ export default function ReunionDetailPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      await api.post(`/reunions/${id}/pv`, fd);
+      await api.post(`/reunions/${id}/pv`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       await load();
     } finally {
       setUploadingPV(false);
@@ -72,7 +79,8 @@ export default function ReunionDetailPage() {
   const handleDownloadPV = async () => {
     if (!id) return;
     const res = await api.get(`/reunions/${id}/pv`, { responseType: 'blob' });
-    const url = URL.createObjectURL(res.data);
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url; a.download = `pv-reunion-${id}.pdf`; a.click();
     URL.revokeObjectURL(url);
@@ -80,22 +88,33 @@ export default function ReunionDetailPage() {
 
   const handleDownloadDoc = async (doc: Document) => {
     const res = await api.get(`/documents/${doc.id}/download`, { responseType: 'blob' });
-    const url = URL.createObjectURL(res.data);
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
     const a = window.document.createElement('a');
-    a.href = url; a.download = doc.nom; a.click();
+    const filename = doc.nom.endsWith('.pdf') ? doc.nom : `${doc.nom}.pdf`;
+    a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleAddParticipant = async () => {
     if (!id || !addMembreId) return;
-    await api.post(`/reunions/${id}/presence/${addMembreId}`, null, { params: { present: true } });
+    await api.post(`/reunions/${id}/participants/${addMembreId}`);
     setAddMembreId('');
     await load();
   };
 
   const handleRemoveParticipant = async (membreId: number) => {
     if (!id) return;
-    await api.delete(`/reunions/${id}/presence/${membreId}`).catch(() => {});
+    await api.delete(`/reunions/${id}/participants/${membreId}`).catch(() => {});
+    await load();
+  };
+
+  const handleAddAllMembres = async () => {
+    if (!id) return;
+    const nonParticipants = allMembres.filter(m => !participants.some(p => p.membre?.id === m.id));
+    for (const m of nonParticipants) {
+      await api.post(`/reunions/${id}/participants/${m.id}`).catch(() => {});
+    }
     await load();
   };
 
@@ -135,11 +154,13 @@ export default function ReunionDetailPage() {
             )}
 
             <div className="mt-4 pt-3 border-t flex gap-3 flex-wrap">
-              <label className="flex items-center gap-1 text-sm text-primary cursor-pointer hover:underline">
-                <Upload size={14} /> {uploadingPV ? 'Upload...' : 'Upload PV'}
-                <input type="file" accept=".pdf,.doc,.docx" className="hidden"
-                  onChange={e => { if (e.target.files?.[0]) handleUploadPV(e.target.files[0]); }} />
-              </label>
+              {canManage && (
+                <label className="flex items-center gap-1 text-sm text-primary cursor-pointer hover:underline">
+                  <Upload size={14} /> {uploadingPV ? 'Upload...' : 'Upload PV'}
+                  <input type="file" accept=".pdf,application/pdf" className="hidden"
+                    onChange={e => { if (e.target.files?.[0]) handleUploadPV(e.target.files[0]); }} />
+                </label>
+              )}
               {reunion.pvPath && (
                 <button onClick={handleDownloadPV} className="flex items-center gap-1 text-sm text-green-600 hover:underline">
                   <Download size={14} /> Télécharger PV
@@ -182,7 +203,7 @@ export default function ReunionDetailPage() {
                 <select value={addMembreId} onChange={e => setAddMembreId(e.target.value)}
                   className="flex-1 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none">
                   <option value="">Ajouter un participant...</option>
-                  {allMembres.filter(m => !participants.some(p => p.id === m.id)).map(m => (
+                  {allMembres.filter(m => !participants.some(p => p.membre?.id === m.id)).map(m => (
                     <option key={m.id} value={m.id}>{m.prenom} {m.nom}</option>
                   ))}
                 </select>
@@ -190,19 +211,25 @@ export default function ReunionDetailPage() {
                   className="bg-primary text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center gap-1">
                   <UserPlus size={16} />
                 </button>
+                <button
+                  onClick={handleAddAllMembres}
+                  disabled={allMembres.filter(m => !participants.some(p => p.membre?.id === m.id)).length === 0}
+                  className="bg-gray-700 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-40 whitespace-nowrap flex items-center gap-1"
+                  title="Ajouter tous les membres"
+                >
+                  <UserPlus size={16} /> Tous
+                </button>
               </div>
             )}
             <div className="space-y-2">
               {participants.map(p => (
                 <div key={p.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                  <Link href={`/dashboard/membres/${p.id}`} className="flex items-center gap-2 hover:text-primary">
-                    <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {p.prenom[0]}{p.nom[0]}
-                    </div>
-                    <span className="text-sm">{p.prenom} {p.nom}</span>
+                  <Link href={`/dashboard/membres/${p.membre?.id}`} className="flex items-center gap-2 hover:text-primary">
+                    <Avatar photo={p.membre?.photo} nom={p.membre?.nom} prenom={p.membre?.prenom} size={28} />
+                    <span className="text-sm">{p.membre?.prenom} {p.membre?.nom}</span>
                   </Link>
                   {canManage && (
-                    <button onClick={() => handleRemoveParticipant(p.id)} className="text-red-400 hover:text-red-600 p-1">
+                    <button onClick={() => handleRemoveParticipant(p.membre?.id)} className="text-red-400 hover:text-red-600 p-1">
                       <UserMinus size={14} />
                     </button>
                   )}

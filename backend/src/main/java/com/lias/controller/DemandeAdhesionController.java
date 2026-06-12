@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/demandes-adhesion")
@@ -23,6 +24,23 @@ import java.util.List;
 public class DemandeAdhesionController {
 
     private final DemandeAdhesionService demandeAdhesionService;
+    private final com.lias.repository.DemandeAdhesionRepository demandeAdhesionRepository;
+
+    /**
+     * Endpoint public : vérifie le statut d'une demande d'adhésion par email.
+     * Utilisé par la page login pour afficher un message approprié.
+     */
+    @GetMapping("/statut-email")
+    public ResponseEntity<Map<String, String>> checkStatutByEmail(@RequestParam String email) {
+        return demandeAdhesionRepository.findTopByEmailOrderByDateDepotDesc(email)
+                .map(d -> {
+                    Map<String, String> result = new java.util.HashMap<>();
+                    result.put("statut", d.getStatut().name());
+                    result.put("commentaire", d.getCommentaireRefus() != null ? d.getCommentaireRefus() : "");
+                    return ResponseEntity.ok(result);
+                })
+                .orElse(ResponseEntity.notFound().<Map<String, String>>build());
+    }
 
     @PostMapping
     public ResponseEntity<DemandeAdhesion> soumettreDemande(@Valid @RequestBody DemandeAdhesionRequestDTO dto) {
@@ -44,8 +62,9 @@ public class DemandeAdhesionController {
     @PutMapping("/{id}/accepter")
     @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
     public ResponseEntity<Void> accepterDemande(@PathVariable Long id,
+                                                 @RequestParam Long equipeId,
                                                  @AuthenticationPrincipal UserPrincipal user) {
-        demandeAdhesionService.accepterDemande(id, user.getMembreId());
+        demandeAdhesionService.accepterDemande(id, user.getMembreId(), equipeId);
         return ResponseEntity.ok().build();
     }
 

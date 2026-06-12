@@ -1,13 +1,26 @@
 package com.lias.service.impl;
 
-import com.lowagie.text.*;
+import com.lowagie.text.BadElementException;
+import com.lowagie.text.Chunk;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
 import com.lowagie.text.Font;
-import com.lowagie.text.pdf.*;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import com.lias.dto.response.RapportAnnuelDTO;
+import com.lias.entity.AffiliationMembre;
+import com.lias.entity.AuteurPublication;
 import com.lias.entity.Evenement;
 import com.lias.entity.Membre;
 import com.lias.entity.Publication;
 import com.lias.entity.RapportAnnuel;
+import com.lias.entity.Reunion;
 import com.lias.enums.StatutMembre;
 import com.lias.enums.StatutRapport;
 import com.lias.exception.ResourceNotFoundException;
@@ -32,63 +45,53 @@ public class RapportAnnuelServiceImpl implements RapportAnnuelService {
     private final MembreRepository membreRepository;
     private final PublicationRepository publicationRepository;
     private final EvenementRepository evenementRepository;
-    private final LaboratoireRepository laboratoireRepository;
+    private final ReunionRepository reunionRepository;
+    private final ConventionRepository conventionRepository;
+    private final ParticipationEvenementRepository participationRepository;
+    private final ParticipantReunionRepository participantReunionRepository;
 
     @Override
     @Transactional
     public RapportAnnuelDTO genererRapport(Integer annee, Long directeurId) {
-        long nbMembres = membreRepository.count();
-        long nbDoctorants = membreRepository.countByStatut(StatutMembre.DOCTORANT);
-        long nbPublications = publicationRepository.countByAnnee(annee);
-        long nbEvenements = evenementRepository.findByAnnee(annee).size();
-
         List<Publication> publications = publicationRepository.findByAnnee(annee);
+        List<Evenement> evenements = evenementRepository.findByAnnee(annee);
+        List<Reunion> reunions = reunionRepository.findByAnnee(annee);
         List<Membre> membres = membreRepository.findByActiveTrue();
+        long nbConventions = conventionRepository.count();
 
         Map<String, Long> publicationsParType = publications.stream()
                 .collect(Collectors.groupingBy(p -> p.getTypePub().name(), Collectors.counting()));
-
         Map<String, Long> membresParStatut = membres.stream()
+                .filter(m -> m.getStatut() != null)
                 .collect(Collectors.groupingBy(m -> m.getStatut().name(), Collectors.counting()));
+        Map<String, Long> evenementsParType = evenements.stream()
+                .filter(e -> e.getType() != null)
+                .collect(Collectors.groupingBy(e -> e.getType().name(), Collectors.counting()));
 
         RapportAnnuel rapport = RapportAnnuel.builder()
                 .annee(annee)
                 .dateGeneration(LocalDateTime.now())
                 .generePar(membreRepository.findById(directeurId).orElse(null))
-                .nbPublications((int) nbPublications)
-                .nbEvenements((int) nbEvenements)
-                .nbMembres((int) nbMembres)
-                .nbDoctorants((int) nbDoctorants)
+                .nbPublications(publications.size())
+                .nbEvenements(evenements.size())
+                .nbMembres((int) membreRepository.count())
+                .nbDoctorants((int) membreRepository.countByStatut(StatutMembre.DOCTORANT))
                 .statut(StatutRapport.BROUILLON)
                 .build();
 
         rapport = rapportRepository.save(rapport);
 
-        return RapportAnnuelDTO.builder()
-                .id(rapport.getId())
-                .annee(annee)
-                .dateGeneration(rapport.getDateGeneration())
-                .generePar(rapport.getGenerePar() != null ?
-                        rapport.getGenerePar().getNom() + " " + rapport.getGenerePar().getPrenom() : "")
-                .statut(rapport.getStatut().name())
-                .nbPublications((int) nbPublications)
-                .nbEvenements((int) nbEvenements)
-                .nbMembres((int) nbMembres)
-                .nbDoctorants((int) nbDoctorants)
-                .publicationsParType(publicationsParType)
-                .membresParStatut(membresParStatut)
-                .build();
+        return toDTO(rapport, publications, evenements, reunions, membres, (int) nbConventions,
+                publicationsParType, membresParStatut, evenementsParType);
     }
 
     @Override
     public List<RapportAnnuelDTO> getRapports() {
         return rapportRepository.findAll().stream()
                 .map(r -> RapportAnnuelDTO.builder()
-                        .id(r.getId())
-                        .annee(r.getAnnee())
+                        .id(r.getId()).annee(r.getAnnee())
                         .dateGeneration(r.getDateGeneration())
-                        .generePar(r.getGenerePar() != null ?
-                                r.getGenerePar().getNom() + " " + r.getGenerePar().getPrenom() : "")
+                        .generePar(r.getGenerePar() != null ? r.getGenerePar().getNom() + " " + r.getGenerePar().getPrenom() : "")
                         .statut(r.getStatut().name())
                         .nbPublications(r.getNbPublications() != null ? r.getNbPublications() : 0)
                         .nbEvenements(r.getNbEvenements() != null ? r.getNbEvenements() : 0)
@@ -102,6 +105,32 @@ public class RapportAnnuelServiceImpl implements RapportAnnuelService {
     public RapportAnnuelDTO getRapportById(Long id) {
         RapportAnnuel rapport = rapportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("RapportAnnuel", "id", id));
+        List<Publication> publications = publicationRepository.findByAnnee(rapport.getAnnee());
+        List<Evenement> evenements = evenementRepository.findByAnnee(rapport.getAnnee());
+        List<Reunion> reunions = reunionRepository.findByAnnee(rapport.getAnnee());
+        List<Membre> membres = membreRepository.findByActiveTrue();
+        long nbConventions = conventionRepository.count();
+
+        Map<String, Long> publicationsParType = publications.stream()
+                .collect(Collectors.groupingBy(p -> p.getTypePub().name(), Collectors.counting()));
+        Map<String, Long> membresParStatut = membres.stream()
+                .filter(m -> m.getStatut() != null)
+                .collect(Collectors.groupingBy(m -> m.getStatut().name(), Collectors.counting()));
+        Map<String, Long> evenementsParType = evenements.stream()
+                .filter(e -> e.getType() != null)
+                .collect(Collectors.groupingBy(e -> e.getType().name(), Collectors.counting()));
+
+        return toDTO(rapport, publications, evenements, reunions, membres, (int) nbConventions,
+                publicationsParType, membresParStatut, evenementsParType);
+    }
+
+    // ─── Helper ──────────────────────────────────────────────────────────────
+
+    private RapportAnnuelDTO toDTO(RapportAnnuel rapport, List<Publication> publications,
+                                    List<Evenement> evenements, List<Reunion> reunions,
+                                    List<Membre> membres, int nbConventions,
+                                    Map<String, Long> pubParType, Map<String, Long> memParStatut,
+                                    Map<String, Long> evtParType) {
         return RapportAnnuelDTO.builder()
                 .id(rapport.getId())
                 .annee(rapport.getAnnee())
@@ -109,17 +138,61 @@ public class RapportAnnuelServiceImpl implements RapportAnnuelService {
                 .generePar(rapport.getGenerePar() != null ?
                         rapport.getGenerePar().getNom() + " " + rapport.getGenerePar().getPrenom() : "")
                 .statut(rapport.getStatut().name())
-                .nbPublications(rapport.getNbPublications())
-                .nbEvenements(rapport.getNbEvenements())
-                .nbMembres(rapport.getNbMembres())
-                .nbDoctorants(rapport.getNbDoctorants())
+                .nbMembres(rapport.getNbMembres() != null ? rapport.getNbMembres() : membres.size())
+                .nbDoctorants(rapport.getNbDoctorants() != null ? rapport.getNbDoctorants() : 0)
+                .nbPublications(publications.size())
+                .nbEvenements(evenements.size())
+                .nbReunions(reunions.size())
+                .nbConventions(nbConventions)
+                .publicationsParType(pubParType)
+                .membresParStatut(memParStatut)
+                .evenementsParType(evtParType)
+                .publications(publications.stream().map(p -> RapportAnnuelDTO.PubItem.builder()
+                        .titre(p.getTitre())
+                        .type(p.getTypePub().name())
+                        .revue(p.getRevue())
+                        .conference(p.getConference())
+                        .annee(p.getAnnee())
+                        .auteurs(p.getAuteurs().stream()
+                                .map(a -> a.getMembre() != null ? a.getMembre().getPrenom() + " " + a.getMembre().getNom() : "")
+                                .collect(Collectors.toList()))
+                        .build()).collect(Collectors.toList()))
+                .evenements(evenements.stream().map(e -> RapportAnnuelDTO.EvtItem.builder()
+                        .titre(e.getTitre())
+                        .type(e.getType() != null ? e.getType().name() : "")
+                        .statut(e.getStatut() != null ? e.getStatut().name() : "")
+                        .dateDebut(e.getDateDebut() != null ? e.getDateDebut().toLocalDate().toString() : "")
+                        .lieu(e.getLieu())
+                        .nbParticipants((int) participationRepository.findByEvenementId(e.getId()).stream()
+                                .filter(p -> p.getStatut() != null && p.getStatut().name().equals("CONFIRME")).count())
+                        .build()).collect(Collectors.toList()))
+                .reunions(reunions.stream().map(r -> RapportAnnuelDTO.ReuItem.builder()
+                        .titre(r.getTitre())
+                        .date(r.getDateReunion() != null ? r.getDateReunion().toLocalDate().toString() : "")
+                        .lieu(r.getLieu())
+                        .statut(r.getStatut() != null ? r.getStatut().name() : "")
+                        .nbParticipants(participantReunionRepository.findByReunionId(r.getId()).size())
+                        .build()).collect(Collectors.toList()))
+                .membres(membres.stream().map(m -> {
+                    String equipe = m.getAffiliations().stream()
+                            .filter(AffiliationMembre::getActif)
+                            .findFirst()
+                            .map(a -> a.getEquipe() != null ? a.getEquipe().getNom() : "")
+                            .orElse("—");
+                    return RapportAnnuelDTO.MemItem.builder()
+                            .nom(m.getNom()).prenom(m.getPrenom())
+                            .statut(m.getStatut() != null ? m.getStatut().name() : "")
+                            .email(m.getEmail()).equipe(equipe)
+                            .build();
+                }).collect(Collectors.toList()))
                 .build();
     }
 
+    // ─── Export PDF ───────────────────────────────────────────────────────────
+
     @Override
     public byte[] exportRapportPDF(Long rapportId) {
-        RapportAnnuel rapport = rapportRepository.findById(rapportId)
-                .orElseThrow(() -> new ResourceNotFoundException("RapportAnnuel", "id", rapportId));
+        RapportAnnuelDTO dto = getRapportById(rapportId);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 50, 50, 60, 60);
@@ -128,224 +201,147 @@ public class RapportAnnuelServiceImpl implements RapportAnnuelService {
             PdfWriter writer = PdfWriter.getInstance(document, baos);
             document.open();
 
-            Color navyBlue = new Color(30, 58, 95);
+            Color navyBlue  = new Color(30, 58, 95);
+            Color lightBlue = new Color(219, 234, 254);
             Color lightGray = new Color(248, 250, 252);
+            Color borderBlue = new Color(191, 219, 254);
 
-            Font titleFont = new Font(Font.HELVETICA, 22, Font.BOLD, navyBlue);
-            Font subtitleFont = new Font(Font.HELVETICA, 13, Font.BOLD, Color.WHITE);
-            Font sectionFont = new Font(Font.HELVETICA, 13, Font.BOLD, navyBlue);
-            Font normalFont = new Font(Font.HELVETICA, 10, Font.NORMAL, Color.DARK_GRAY);
-            Font boldFont = new Font(Font.HELVETICA, 10, Font.BOLD, navyBlue);
+            Font titleFont    = new Font(Font.HELVETICA, 22, Font.BOLD,   navyBlue);
+            Font whiteFont    = new Font(Font.HELVETICA, 11, Font.BOLD,   Color.WHITE);
+            Font sectionFont  = new Font(Font.HELVETICA, 13, Font.BOLD,   navyBlue);
+            Font normalFont   = new Font(Font.HELVETICA, 10, Font.NORMAL, Color.DARK_GRAY);
+            Font boldFont     = new Font(Font.HELVETICA, 10, Font.BOLD,   navyBlue);
+            Font italicFont   = new Font(Font.HELVETICA,  9, Font.ITALIC, Color.GRAY);
 
-            // Header banner
             PdfContentByte cb = writer.getDirectContent();
+
+            // ── Banner ──────────────────────────────────────────────────────
             cb.setColorFill(navyBlue);
-            cb.rectangle(50, document.top() - 10, document.right() - document.left(), 60);
+            cb.rectangle(50, document.top() - 10, document.right() - document.left(), 55);
             cb.fill();
 
-            Paragraph header = new Paragraph("Laboratoire LIAS\nRapport d'Activité Annuel " + rapport.getAnnee(), subtitleFont);
-            header.setAlignment(Element.ALIGN_CENTER);
-            header.setSpacingAfter(40f);
-            document.add(header);
+            Paragraph banner = new Paragraph("Laboratoire LIAS — Rapport d'Activité Annuel " + dto.getAnnee(), whiteFont);
+            banner.setAlignment(Element.ALIGN_CENTER);
+            banner.setSpacingAfter(35f);
+            document.add(banner);
 
-            // Title
-            Paragraph title = new Paragraph("RAPPORT ANNUEL " + rapport.getAnnee(), titleFont);
+            Paragraph title = new Paragraph("RAPPORT ANNUEL D'ACTIVITÉS " + dto.getAnnee(), titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(6f);
             document.add(title);
 
-            if (rapport.getGenerePar() != null) {
-                Paragraph gen = new Paragraph("Généré par : " + rapport.getGenerePar().getNom() + " " + rapport.getGenerePar().getPrenom(), normalFont);
-                gen.setAlignment(Element.ALIGN_CENTER);
-                gen.setSpacingAfter(4f);
-                document.add(gen);
-            }
+            document.add(new Paragraph("Généré par : " + dto.getGenerePar() +
+                    "   |   Date : " + (dto.getDateGeneration() != null ? dto.getDateGeneration().toLocalDate() : ""), italicFont) {{
+                setAlignment(Element.ALIGN_CENTER); setSpacingAfter(20f);
+            }});
 
-            if (rapport.getDateGeneration() != null) {
-                Paragraph date = new Paragraph("Date : " + rapport.getDateGeneration().toLocalDate().toString(), normalFont);
-                date.setAlignment(Element.ALIGN_CENTER);
-                date.setSpacingAfter(30f);
-                document.add(date);
-            }
+            // ── 1. Chiffres clés ────────────────────────────────────────────
+            addSectionTitle(document, "1. Chiffres Clés", sectionFont);
 
-            // Separator line
-            cb.setColorStroke(navyBlue);
-            cb.setLineWidth(1.5f);
-            float y = writer.getVerticalPosition(false);
-            cb.moveTo(50, y);
-            cb.lineTo(document.right() - 50, y);
-            cb.stroke();
+            PdfPTable stats = new PdfPTable(6);
+            stats.setWidthPercentage(100);
+            stats.setSpacingAfter(20f);
 
-            document.add(new Paragraph(" "));
-            document.add(new Paragraph(" "));
+            addStatCell(stats, "Membres", dto.getNbMembres(), lightBlue, borderBlue, boldFont, normalFont);
+            addStatCell(stats, "Doctorants", dto.getNbDoctorants(), lightBlue, borderBlue, boldFont, normalFont);
+            addStatCell(stats, "Publications", dto.getNbPublications(), lightBlue, borderBlue, boldFont, normalFont);
+            addStatCell(stats, "Événements", dto.getNbEvenements(), lightBlue, borderBlue, boldFont, normalFont);
+            addStatCell(stats, "Réunions", dto.getNbReunions(), lightBlue, borderBlue, boldFont, normalFont);
+            addStatCell(stats, "Conventions", dto.getNbConventions(), lightBlue, borderBlue, boldFont, normalFont);
+            document.add(stats);
 
-            // Stats section
-            Paragraph statsTitle = new Paragraph("1. Chiffres Clés", sectionFont);
-            statsTitle.setSpacingBefore(10f);
-            statsTitle.setSpacingAfter(12f);
-            document.add(statsTitle);
-
-            PdfPTable statsTable = new PdfPTable(4);
-            statsTable.setWidthPercentage(100);
-            statsTable.setSpacingAfter(20f);
-
-            String[][] statsData = {
-                {"Membres actifs", String.valueOf(rapport.getNbMembres())},
-                {"Doctorants", String.valueOf(rapport.getNbDoctorants())},
-                {"Publications", String.valueOf(rapport.getNbPublications())},
-                {"Événements", String.valueOf(rapport.getNbEvenements())}
-            };
-
-            for (String[] stat : statsData) {
-                PdfPCell labelCell = new PdfPCell(new Phrase(stat[0], normalFont));
-                labelCell.setBackgroundColor(new Color(219, 234, 254));
-                labelCell.setPadding(8f);
-                labelCell.setBorderColor(new Color(191, 219, 254));
-                statsTable.addCell(labelCell);
-
-                PdfPCell valueCell = new PdfPCell(new Phrase(stat[1], boldFont));
-                valueCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                valueCell.setPadding(8f);
-                valueCell.setBorderColor(new Color(191, 219, 254));
-                statsTable.addCell(valueCell);
-            }
-            document.add(statsTable);
-
-            // Publications section
-            List<Publication> publications = publicationRepository.findByAnnee(rapport.getAnnee());
-            if (!publications.isEmpty()) {
-                Paragraph pubTitle = new Paragraph("2. Publications " + rapport.getAnnee(), sectionFont);
-                pubTitle.setSpacingBefore(10f);
-                pubTitle.setSpacingAfter(12f);
-                document.add(pubTitle);
-
-                PdfPTable pubTable = new PdfPTable(3);
-                pubTable.setWidthPercentage(100);
-                pubTable.setWidths(new float[]{4f, 1.5f, 1.5f});
-                pubTable.setSpacingAfter(20f);
-
-                String[] headers = {"Titre", "Type", "Année"};
-                for (String h : headers) {
-                    PdfPCell cell = new PdfPCell(new Phrase(h, new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE)));
-                    cell.setBackgroundColor(navyBlue);
-                    cell.setPadding(7f);
-                    pubTable.addCell(cell);
-                }
-
+            // ── 2. Répartition membres ──────────────────────────────────────
+            if (dto.getMembresParStatut() != null && !dto.getMembresParStatut().isEmpty()) {
+                addSectionTitle(document, "2. Répartition des Membres par Statut", sectionFont);
+                PdfPTable t = new PdfPTable(2);
+                t.setWidthPercentage(60);
+                t.setSpacingAfter(20f);
+                addTableHeader(t, new String[]{"Statut", "Nombre"}, navyBlue, whiteFont);
                 boolean alt = false;
-                for (Publication pub : publications) {
+                for (Map.Entry<String, Long> e : dto.getMembresParStatut().entrySet()) {
                     Color bg = alt ? lightGray : Color.WHITE;
-                    PdfPCell c1 = new PdfPCell(new Phrase(pub.getTitre(), normalFont));
-                    c1.setBackgroundColor(bg);
-                    c1.setPadding(6f);
-                    pubTable.addCell(c1);
-
-                    PdfPCell c2 = new PdfPCell(new Phrase(pub.getTypePub().name(), normalFont));
-                    c2.setBackgroundColor(bg);
-                    c2.setPadding(6f);
-                    pubTable.addCell(c2);
-
-                    PdfPCell c3 = new PdfPCell(new Phrase(String.valueOf(pub.getAnnee()), normalFont));
-                    c3.setBackgroundColor(bg);
-                    c3.setPadding(6f);
-                    pubTable.addCell(c3);
-
+                    addRow(t, new String[]{e.getKey(), String.valueOf(e.getValue())}, bg, normalFont);
                     alt = !alt;
                 }
-                document.add(pubTable);
+                document.add(t);
             }
 
-            // Events section
-            List<Evenement> evenements = evenementRepository.findByAnnee(rapport.getAnnee());
-            if (!evenements.isEmpty()) {
-                Paragraph evtTitle = new Paragraph("3. Événements " + rapport.getAnnee(), sectionFont);
-                evtTitle.setSpacingBefore(10f);
-                evtTitle.setSpacingAfter(12f);
-                document.add(evtTitle);
-
-                PdfPTable evtTable = new PdfPTable(3);
-                evtTable.setWidthPercentage(100);
-                evtTable.setWidths(new float[]{4f, 2f, 2f});
-                evtTable.setSpacingAfter(20f);
-
-                String[] evtHeaders = {"Titre", "Type", "Statut"};
-                for (String h : evtHeaders) {
-                    PdfPCell cell = new PdfPCell(new Phrase(h, new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE)));
-                    cell.setBackgroundColor(navyBlue);
-                    cell.setPadding(7f);
-                    evtTable.addCell(cell);
+            // ── 3. Publications ─────────────────────────────────────────────
+            if (dto.getPublications() != null && !dto.getPublications().isEmpty()) {
+                addSectionTitle(document, "3. Publications " + dto.getAnnee() + " (" + dto.getNbPublications() + ")", sectionFont);
+                PdfPTable t = new PdfPTable(4);
+                t.setWidthPercentage(100);
+                t.setWidths(new float[]{4f, 1.5f, 2.5f, 2f});
+                t.setSpacingAfter(20f);
+                addTableHeader(t, new String[]{"Titre", "Type", "Auteurs", "Revue/Conférence"}, navyBlue, whiteFont);
+                boolean alt = false;
+                for (RapportAnnuelDTO.PubItem p : dto.getPublications()) {
+                    Color bg = alt ? lightGray : Color.WHITE;
+                    String auteurs = p.getAuteurs() != null ? String.join(", ", p.getAuteurs()) : "";
+                    String lieu = p.getRevue() != null ? p.getRevue() : (p.getConference() != null ? p.getConference() : "—");
+                    addRow(t, new String[]{p.getTitre(), p.getType(), auteurs, lieu}, bg, normalFont);
+                    alt = !alt;
                 }
+                document.add(t);
+            }
 
-                boolean altEvt = false;
-                for (Evenement evt : evenements) {
-                    Color bg = altEvt ? lightGray : Color.WHITE;
-                    PdfPCell c1 = new PdfPCell(new Phrase(evt.getTitre(), normalFont));
-                    c1.setBackgroundColor(bg);
-                    c1.setPadding(6f);
-                    evtTable.addCell(c1);
-
-                    PdfPCell c2 = new PdfPCell(new Phrase(evt.getType().name(), normalFont));
-                    c2.setBackgroundColor(bg);
-                    c2.setPadding(6f);
-                    evtTable.addCell(c2);
-
-                    PdfPCell c3 = new PdfPCell(new Phrase(evt.getStatut().name(), normalFont));
-                    c3.setBackgroundColor(bg);
-                    c3.setPadding(6f);
-                    evtTable.addCell(c3);
-
-                    altEvt = !altEvt;
+            // ── 4. Événements ───────────────────────────────────────────────
+            if (dto.getEvenements() != null && !dto.getEvenements().isEmpty()) {
+                addSectionTitle(document, "4. Événements " + dto.getAnnee() + " (" + dto.getNbEvenements() + ")", sectionFont);
+                PdfPTable t = new PdfPTable(5);
+                t.setWidthPercentage(100);
+                t.setWidths(new float[]{3.5f, 1.5f, 2f, 1.5f, 1f});
+                t.setSpacingAfter(20f);
+                addTableHeader(t, new String[]{"Titre", "Type", "Date", "Statut", "Participants"}, navyBlue, whiteFont);
+                boolean alt = false;
+                for (RapportAnnuelDTO.EvtItem e : dto.getEvenements()) {
+                    Color bg = alt ? lightGray : Color.WHITE;
+                    addRow(t, new String[]{e.getTitre(), e.getType(), e.getDateDebut(), e.getStatut(), String.valueOf(e.getNbParticipants())}, bg, normalFont);
+                    alt = !alt;
                 }
-                document.add(evtTable);
+                document.add(t);
             }
 
-            // Members section
-            List<Membre> membres = membreRepository.findByActiveTrue();
-            Paragraph memTitle = new Paragraph("4. Membres du Laboratoire", sectionFont);
-            memTitle.setSpacingBefore(10f);
-            memTitle.setSpacingAfter(12f);
-            document.add(memTitle);
-
-            PdfPTable memTable = new PdfPTable(3);
-            memTable.setWidthPercentage(100);
-            memTable.setWidths(new float[]{3f, 3f, 2f});
-            memTable.setSpacingAfter(20f);
-
-            String[] memHeaders = {"Nom", "Prénom", "Statut"};
-            for (String h : memHeaders) {
-                PdfPCell cell = new PdfPCell(new Phrase(h, new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE)));
-                cell.setBackgroundColor(navyBlue);
-                cell.setPadding(7f);
-                memTable.addCell(cell);
+            // ── 5. Réunions ─────────────────────────────────────────────────
+            if (dto.getReunions() != null && !dto.getReunions().isEmpty()) {
+                addSectionTitle(document, "5. Réunions " + dto.getAnnee() + " (" + dto.getNbReunions() + ")", sectionFont);
+                PdfPTable t = new PdfPTable(4);
+                t.setWidthPercentage(100);
+                t.setWidths(new float[]{3.5f, 1.5f, 2f, 1f});
+                t.setSpacingAfter(20f);
+                addTableHeader(t, new String[]{"Titre", "Date", "Statut", "Participants"}, navyBlue, whiteFont);
+                boolean alt = false;
+                for (RapportAnnuelDTO.ReuItem r : dto.getReunions()) {
+                    Color bg = alt ? lightGray : Color.WHITE;
+                    addRow(t, new String[]{r.getTitre(), r.getDate(), r.getStatut(), String.valueOf(r.getNbParticipants())}, bg, normalFont);
+                    alt = !alt;
+                }
+                document.add(t);
             }
 
-            boolean altMem = false;
-            for (Membre m : membres) {
-                Color bg = altMem ? lightGray : Color.WHITE;
-                PdfPCell c1 = new PdfPCell(new Phrase(m.getNom(), normalFont));
-                c1.setBackgroundColor(bg);
-                c1.setPadding(6f);
-                memTable.addCell(c1);
-
-                PdfPCell c2 = new PdfPCell(new Phrase(m.getPrenom(), normalFont));
-                c2.setBackgroundColor(bg);
-                c2.setPadding(6f);
-                memTable.addCell(c2);
-
-                PdfPCell c3 = new PdfPCell(new Phrase(m.getStatut().name(), normalFont));
-                c3.setBackgroundColor(bg);
-                c3.setPadding(6f);
-                memTable.addCell(c3);
-
-                altMem = !altMem;
+            // ── 6. Liste des membres ────────────────────────────────────────
+            if (dto.getMembres() != null && !dto.getMembres().isEmpty()) {
+                addSectionTitle(document, "6. Membres du Laboratoire (" + dto.getNbMembres() + ")", sectionFont);
+                PdfPTable t = new PdfPTable(4);
+                t.setWidthPercentage(100);
+                t.setWidths(new float[]{2f, 2f, 2f, 2.5f});
+                t.setSpacingAfter(20f);
+                addTableHeader(t, new String[]{"Nom", "Prénom", "Statut", "Équipe"}, navyBlue, whiteFont);
+                boolean alt = false;
+                for (RapportAnnuelDTO.MemItem m : dto.getMembres()) {
+                    Color bg = alt ? lightGray : Color.WHITE;
+                    addRow(t, new String[]{m.getNom(), m.getPrenom(), m.getStatut(), m.getEquipe()}, bg, normalFont);
+                    alt = !alt;
+                }
+                document.add(t);
             }
-            document.add(memTable);
 
-            // Footer
+            // ── Footer ──────────────────────────────────────────────────────
             document.add(Chunk.NEWLINE);
             Paragraph footer = new Paragraph(
-                "LIAS - Laboratoire d'Informatique et d'Applications Scientifiques\nFaculté des Sciences Ben M'Sik, Casablanca, Maroc",
-                new Font(Font.HELVETICA, 9, Font.ITALIC, Color.GRAY));
+                "LIAS — Laboratoire d'Informatique et d'Applications Scientifiques\n" +
+                "Ce rapport constitue la base du dossier de demande de budget annuel.",
+                italicFont);
             footer.setAlignment(Element.ALIGN_CENTER);
             document.add(footer);
 
@@ -355,5 +351,49 @@ public class RapportAnnuelServiceImpl implements RapportAnnuelService {
         }
 
         return baos.toByteArray();
+    }
+
+    // ─── PDF helpers ──────────────────────────────────────────────────────────
+
+    private void addSectionTitle(Document doc, String text, Font font) throws DocumentException {
+        Paragraph p = new Paragraph(text, font);
+        p.setSpacingBefore(14f);
+        p.setSpacingAfter(8f);
+        doc.add(p);
+    }
+
+    private void addTableHeader(PdfPTable table, String[] headers, Color bg, Font font) {
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, font));
+            cell.setBackgroundColor(bg);
+            cell.setPadding(7f);
+            table.addCell(cell);
+        }
+    }
+
+    private void addRow(PdfPTable table, String[] values, Color bg, Font font) {
+        for (String v : values) {
+            PdfPCell cell = new PdfPCell(new Phrase(v != null ? v : "—", font));
+            cell.setBackgroundColor(bg);
+            cell.setPadding(6f);
+            table.addCell(cell);
+        }
+    }
+
+    private void addStatCell(PdfPTable table, String label, int value,
+                              Color bg, Color border, Font boldFont, Font normalFont) {
+        PdfPCell labelCell = new PdfPCell(new Phrase(label, normalFont));
+        labelCell.setBackgroundColor(bg);
+        labelCell.setBorderColor(border);
+        labelCell.setPadding(8f);
+        labelCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(labelCell);
+
+        PdfPCell valCell = new PdfPCell(new Phrase(String.valueOf(value), boldFont));
+        valCell.setBackgroundColor(Color.WHITE);
+        valCell.setBorderColor(border);
+        valCell.setPadding(8f);
+        valCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(valCell);
     }
 }

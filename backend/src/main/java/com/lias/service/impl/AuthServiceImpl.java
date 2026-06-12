@@ -32,12 +32,16 @@ public class AuthServiceImpl implements AuthService {
         Membre membre = membreRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "email", dto.getEmail()));
 
-        if (!Boolean.TRUE.equals(membre.getActive())
-                && membre.getStatut() != com.lias.enums.StatutMembre.RETRAITE
-                && membre.getStatut() != com.lias.enums.StatutMembre.ANCIEN) {
-            throw new RuntimeException("Compte désactivé");
+        // Anciens membres : connexion bloquée
+        if (membre.getStatut() == com.lias.enums.StatutMembre.ANCIEN) {
+            throw new RuntimeException("COMPTE_ANCIEN_BLOQUE");
         }
-        // RETRAITE et ANCIEN : autorisés à se connecter — le frontend gère la redirection
+
+        if (!Boolean.TRUE.equals(membre.getActive())
+                && membre.getStatut() != com.lias.enums.StatutMembre.RETRAITE) {
+            throw new RuntimeException("COMPTE_BLOQUE_ADMIN");
+        }
+        // RETRAITE : autorisé à se connecter en lecture seule
 
         String token = jwtTokenProvider.generateToken(authentication);
 

@@ -1,5 +1,6 @@
 package com.lias.entity;
 
+import com.lias.enums.StatutDocument;
 import com.lias.enums.TypeDocument;
 import jakarta.persistence.*;
 import lombok.*;
@@ -54,6 +55,19 @@ public class Document {
 
     private Long taille;
     private String mimeType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatutDocument statut = StatutDocument.PENDING;
+
+    private String motifRefus;
+
+    private LocalDateTime dateDecision;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approuve_par_id")
+    @JsonIgnoreProperties({"documentsUploades", "affiliations", "roles", "demandesAdhesion", "demandesMateriel"})
+    private Membre approuvePar;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;

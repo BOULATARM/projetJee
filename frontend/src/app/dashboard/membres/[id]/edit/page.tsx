@@ -4,11 +4,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { membreService } from '@/services/membre.service';
-import { Equipe, MembreDetail, StatutMembre } from '@/types';
+import { Equipe, MembreDetail, RoleSysteme, StatutMembre } from '@/types';
 import { toArray } from '@/lib/normalize';
 import api from '@/lib/api';
 import { ArrowLeft, Eye, EyeOff, ExternalLink, Lock, Save } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/authStore';
 
 const STATUTS: StatutMembre[] = [StatutMembre.PERMANENT, StatutMembre.ASSOCIE, StatutMembre.DOCTORANT, StatutMembre.RETRAITE, StatutMembre.ANCIEN];
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
@@ -16,6 +18,24 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v
 export default function EditMembrePage() {
   const { id } = useParams();
   const router = useRouter();
+  const { role, membreId: currentMembreId } = useAuthStore();
+  const isSelf = currentMembreId === Number(id);
+
+  // Bloquer l'accès si admin qui tente de modifier un autre membre
+  if (role === RoleSysteme.ADMIN && !isSelf) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-500">
+        <Lock size={36} className="opacity-30" />
+        <p className="font-medium">Accès refusé</p>
+        <p className="text-sm text-gray-400 text-center">
+          L&apos;administrateur ne peut pas modifier les données personnelles d&apos;un membre.
+        </p>
+        <Link href={`/dashboard/membres/${id}`} className="mt-2 text-primary text-sm hover:underline">
+          ← Retour au profil
+        </Link>
+      </div>
+    );
+  }
   const [profil, setProfil] = useState<MembreDetail | null>(null);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [equipeId, setEquipeId] = useState<number | ''>('');
@@ -114,10 +134,7 @@ export default function EditMembrePage() {
         <form onSubmit={handleSubmit} className="grid gap-5">
           {/* Photo */}
           <div className="flex items-center gap-4">
-            {photoUrl
-              ? <img src={photoUrl} alt="Photo" className="w-16 h-16 rounded-full object-cover border-2 border-primary" />
-              : <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-2xl font-bold">{profil.prenom[0]}{profil.nom[0]}</div>
-            }
+            <Avatar photo={photoUrl ?? profil.photo} nom={profil.nom} prenom={profil.prenom} size={64} />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nouvelle photo</label>
               <input type="file" accept="image/*" onChange={e => setPhotoFile(e.target.files?.[0] || null)}

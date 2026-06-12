@@ -9,6 +9,7 @@ import { membreService } from '@/services/membre.service';
 import { publicationService } from '@/services/publication.service';
 import { evenementService } from '@/services/evenement.service';
 import { DashboardStats, MembreResponse, PublicationResponse, EvenementResponse } from '@/types';
+import { Avatar } from '@/components/ui/Avatar';
 
 export default function HomePage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -92,9 +93,7 @@ export default function HomePage() {
               {membres.slice(0, 5).map((m) => (
                 <Link key={m.id} href={`/membres/${m.id}`}>
                   <Card className="flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                      {m.prenom[0]}{m.nom[0]}
-                    </div>
+                    <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={40} />
                     <div className="flex-1">
                       <p className="font-medium">{m.prenom} {m.nom}</p>
                       <Badge className={getStatutColor(m.statut)}>{m.statut}</Badge>
@@ -113,9 +112,23 @@ export default function HomePage() {
             <div className="space-y-3">
               {publications.slice(0, 5).map((p) => (
                 <Card key={p.id}>
-                  <p className="font-medium text-gray-900">{p.titre}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-gray-900">{p.titre}</p>
+                    <a
+                      href={`http://localhost:8080/api/v1/publications/${p.id}/download`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 flex items-center gap-1 text-xs text-red-600 hover:text-red-800 border border-red-200 rounded px-2 py-0.5 hover:bg-red-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+                      PDF
+                    </a>
+                  </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    {p.auteurs?.map(a => `${a.prenom} ${a.nom}`).join(', ')} • {p.annee}
+                    {p.auteurs && p.auteurs.length > 0
+                      ? p.auteurs.map(a => `${a.prenom} ${a.nom}`).join(', ')
+                      : <span className="italic">Auteurs non spécifiés</span>
+                    } • {p.annee}
                   </p>
                   <Badge className="mt-2 bg-blue-100 text-blue-800">{p.typePub}</Badge>
                 </Card>

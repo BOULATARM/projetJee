@@ -16,6 +16,7 @@ import com.lias.repository.AffiliationMembreRepository;
 import com.lias.repository.EquipeRepository;
 import com.lias.repository.MembreRepository;
 import com.lias.repository.PublicationRepository;
+import com.lias.service.AuditLogService;
 import com.lias.service.MembreService;
 import com.lias.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class MembreServiceImpl implements MembreService {
     private final EquipeRepository equipeRepository;
     private final MembreMapper membreMapper;
     private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     @Override
     public List<MembreResponseDTO> getAllMembres() {
@@ -124,7 +126,10 @@ public class MembreServiceImpl implements MembreService {
     public void changeStatut(Long id, StatutMembre statut) {
         Membre membre = membreRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", id));
+        String ancienStatut = membre.getStatut() != null ? membre.getStatut().name() : "INCONNU";
         membre.setStatut(statut);
+        auditLogService.log("MEMBRE", "CHANGEMENT_STATUT", "changeStatut",
+                membre.getEmail(), id, ancienStatut + " → " + statut.name());
 
         // Workflow départ: close all active affiliations when a member retires or leaves
         if (statut == StatutMembre.RETRAITE || statut == StatutMembre.ANCIEN) {
@@ -155,6 +160,8 @@ public class MembreServiceImpl implements MembreService {
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", id));
         membre.setActive(false);
         membreRepository.save(membre);
+        auditLogService.log("MEMBRE", "COMPTE_BLOQUE", "desactiverCompte",
+                membre.getEmail(), id, "Compte désactivé");
     }
 
     @Override
@@ -164,6 +171,8 @@ public class MembreServiceImpl implements MembreService {
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", id));
         membre.setActive(true);
         membreRepository.save(membre);
+        auditLogService.log("MEMBRE", "COMPTE_DEBLOQUE", "reactiverCompte",
+                membre.getEmail(), id, "Compte réactivé");
     }
 
     @Override

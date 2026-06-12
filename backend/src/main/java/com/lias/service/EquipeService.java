@@ -16,4 +16,6 @@ public interface EquipeService {
     List<AffiliationMembre> getHistoriqueAffiliations(Long membreId);
     List<AffiliationMembre> getAffiliationsByEquipe(Long equipeId);
     List<com.lias.dto.response.MembreResponseDTO> getMembresActifs(Long equipeId);
+    Equipe changerChefEquipe(Long equipeId, Long newChefId);
+    void supprimerEquipe(Long id);
 }

@@ -6,6 +6,8 @@ import com.lias.dto.response.MembreResponseDTO;
 import com.lias.enums.StatutMembre;
 import com.lias.security.UserPrincipal;
 import com.lias.service.FileStorageService;
+import com.lias.entity.AuditLog;
+import com.lias.service.AuditLogService;
 import com.lias.service.MembreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class MembreController {
 
     private final MembreService membreService;
     private final FileStorageService fileStorageService;
+    private final AuditLogService auditLogService;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final com.lias.repository.MembreRepository membreRepository;
 
@@ -93,6 +96,13 @@ public class MembreController {
         MembreRequestDTO dto = new MembreRequestDTO();
         dto.setPhoto(photoPath);
         return ResponseEntity.ok(membreService.updateProfil(id, dto));
+    }
+
+    /** Historique des actions sur le compte (bloc/débloc/statut/rôle) */
+    @GetMapping("/{id}/historique")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR') or #id == authentication.principal.membreId")
+    public ResponseEntity<List<AuditLog>> getHistorique(@PathVariable Long id) {
+        return ResponseEntity.ok(auditLogService.getByMembreId(id));
     }
 
     /** Demande de réactivation pour les membres ANCIEN */

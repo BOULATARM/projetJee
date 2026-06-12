@@ -98,6 +98,23 @@ export interface AffiliationDTO {
   motifDepart?: string;
 }
 
+export interface EquipeAffiliation {
+  id: number;
+  membre: { id: number; nom: string; prenom: string; photo?: string; statut?: string };
+  dateDebut: string;
+  dateFin?: string;
+  actif: boolean;
+  motifDepart?: string;
+}
+
+export interface EquipeHistoriqueEntry {
+  id: number;
+  membre: { id: number; nom: string; prenom: string; photo?: string };
+  action: 'MEMBRE_AJOUTE' | 'MEMBRE_RETIRE' | 'CHEF_NOMME';
+  date: string;
+  details?: string;
+}
+
 export interface RoleDTO {
   id: number;
   role: RoleSysteme;
@@ -159,6 +176,7 @@ export interface OrganisateurDTO {
   id: number;
   nom: string;
   prenom: string;
+  photo?: string;
   roleOrganisation: string;
 }
 
@@ -203,6 +221,7 @@ export interface DemandeAdhesion {
   biographie?: string;
   centresInteret?: string;
   publications?: string;
+  equipeId?: number;
 }
 
 export interface Convention {
@@ -217,6 +236,19 @@ export interface Convention {
   statut: string;
 }
 
+export enum TypeMateriel {
+  DEFINITIF = 'DEFINITIF',
+  PROVISOIRE = 'PROVISOIRE',
+}
+
+export interface MaterielHistorique {
+  id: number;
+  action: string;
+  details?: string;
+  faitPar?: MembreResponse;
+  dateAction: string;
+}
+
 export interface Materiel {
   id: number;
   nom: string;
@@ -225,6 +257,8 @@ export interface Materiel {
   quantiteDisponible: number;
   dateArrivage?: string;
   categorie?: string;
+  typeMateriel?: TypeMateriel;
+  historique?: MaterielHistorique[];
 }
 
 export interface Document {
@@ -240,6 +274,10 @@ export interface Document {
   reunion?: Reunion;
   convention?: Convention;
   uploadePar?: MembreResponse;
+  statut?: string;
+  motifRefus?: string;
+  dateDecision?: string;
+  approuvePar?: MembreResponse;
 }
 
 export interface Reunion {
@@ -251,9 +289,8 @@ export interface Reunion {
   compteRendu?: string;
   pvPath?: string;
   statut: string;
-  createur?: MembreResponse;
   creePar?: MembreResponse;
-  participants?: unknown[];
+  nbDocuments?: number;
 }
 
 export enum TypeNotification {
@@ -278,24 +315,6 @@ export interface Notification {
   dateCreation: string;
 }
 
-export interface Discussion {
-  id: number;
-  sujet: string;
-  contenu: string;
-  auteur?: MembreResponse;
-  dateCreation: string;
-  evenement?: EvenementResponse;
-  equipe?: Equipe;
-  reponses?: ReponseDiscussion[];
-}
-
-export interface ReponseDiscussion {
-  id: number;
-  contenu: string;
-  auteur?: MembreResponse;
-  dateCreation: string;
-}
-
 export interface Mandat {
   id: number;
   dateDebut: string;
@@ -303,7 +322,21 @@ export interface Mandat {
   actif: boolean;
   directeur?: MembreResponse;
   viceDirecteur?: MembreResponse;
-  chefsEquipe?: MembreResponse[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RapportPubItem {
+  titre: string; type: string; revue?: string; conference?: string; annee: number; auteurs: string[];
+}
+export interface RapportEvtItem {
+  titre: string; type: string; statut: string; dateDebut: string; lieu?: string; nbParticipants: number;
+}
+export interface RapportReuItem {
+  titre: string; date: string; lieu?: string; statut: string; nbParticipants: number;
+}
+export interface RapportMemItem {
+  nom: string; prenom: string; statut: string; email: string; equipe: string;
 }
 
 export interface RapportAnnuel {
@@ -316,7 +349,37 @@ export interface RapportAnnuel {
   nbEvenements: number;
   nbMembres: number;
   nbDoctorants: number;
+  nbReunions?: number;
+  nbConventions?: number;
   statut: string;
+  publicationsParType?: Record<string, number>;
+  membresParStatut?: Record<string, number>;
+  evenementsParType?: Record<string, number>;
+  publications?: RapportPubItem[];
+  evenements?: RapportEvtItem[];
+  reunions?: RapportReuItem[];
+  membres?: RapportMemItem[];
+}
+
+export enum MessageType {
+  GLOBAL = 'GLOBAL',
+  TEAM = 'TEAM',
+  DIRECT = 'DIRECT',
+}
+
+export interface MessageResponse {
+  id: number;
+  sender: MembreResponse;
+  contenu?: string;
+  fichierUrl?: string;
+  fichierNom?: string;
+  fichierType?: string;
+  type: MessageType;
+  recipient?: MembreResponse;
+  equipeId?: number;
+  equipeNom?: string;
+  dateEnvoi: string;
+  lue: boolean;
 }
 
 export interface DistributionMateriel {
@@ -325,6 +388,10 @@ export interface DistributionMateriel {
   membre?: MembreResponse;
   quantite: number;
   dateDistribution: string;
+  typeMateriel?: TypeMateriel;
+  datePrise?: string;
+  dateRetourPrevue?: string;
+  dateRetourEffective?: string;
   distributePar?: MembreResponse;
   commentaire?: string;
 }
@@ -332,9 +399,12 @@ export interface DistributionMateriel {
 export interface DemandeMateriel {
   id: number;
   membre?: MembreResponse;
-  description: string;
+  materielDemande?: Materiel;
+  description?: string;
   justification?: string;
   quantite?: number;
+  datePriseSouhaitee?: string;
+  dateRetourPrevue?: string;
   statut: StatutDemande;
   dateDemande: string;
   dateTraitement?: string;

@@ -2,6 +2,7 @@ package com.lias.service;
 
 import com.lias.dto.request.EvenementRequestDTO;
 import com.lias.dto.response.EvenementResponseDTO;
+import com.lias.dto.response.ParticipationDTO;
 import com.lias.enums.StatutEvenement;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,4 +16,12 @@ public interface EvenementService {
     void affecterOrganisateur(Long evenementId, Long membreId, String role);
     void changerStatut(Long evenementId, StatutEvenement statut);
     List<EvenementResponseDTO> getEvenementsByDateRange(LocalDateTime debut, LocalDateTime fin);
+
+    void annulerEvenement(Long id);
+
+    // Participation
+    ParticipationDTO participer(Long evenementId, Long membreId);
+    void confirmerParticipation(Long evenementId, Long membreId);
+    void refuserParticipation(Long evenementId, Long membreId);
+    List<ParticipationDTO> getParticipations(Long evenementId);
 }

@@ -21,5 +21,6 @@ public class EvenementResponseDTO {
     private Integer annee;
     private StatutEvenement statut;
     private List<OrganisateurDTO> organisateurs;
+    private List<ParticipationDTO> participations;
     private Integer nbDocuments;
 }

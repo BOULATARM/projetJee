@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/Badge';
 import api from '@/lib/api';
 import { Equipe, MembreResponse, RoleSysteme } from '@/types';
 import { formatDate } from '@/lib/utils';
-import { GraduationCap, PlusCircle, Users, X, ArrowRight } from 'lucide-react';
+import { GraduationCap, PlusCircle, Users, X, ArrowRight, Trash2 } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { membreService } from '@/services/membre.service';
+import { equipeService } from '@/services/equipe.service';
 import { toArray } from '@/lib/normalize';
 
 export default function EquipesPage() {
@@ -19,8 +21,18 @@ export default function EquipesPage() {
   const [equipeMembers, setEquipeMembers] = useState<Record<number, MembreResponse[]>>({});
   const [form, setForm] = useState({ nom: '', description: '', axeRecherche: '', dateCreation: '', chefEquipeId: '' });
   const [saving, setSaving] = useState(false);
-  const { role } = useAuthStore();
-  const canCreate = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
+  const { role, membreId: currentMembreId } = useAuthStore();
+  const canCreate = role === RoleSysteme.DIRECTEUR;
+  const isReadOnly = role === RoleSysteme.ADMIN;
+  const canDeleteEquipe = (eq: Equipe) =>
+    !isReadOnly && (role === RoleSysteme.DIRECTEUR || eq.chefEquipe?.id === currentMembreId);
+  const handleDelete = async (id: number, nom: string) => {
+    if (!confirm(`Supprimer l'équipe "${nom}" ? Cette action est irréversible.`)) return;
+    try {
+      await equipeService.delete(id);
+      load();
+    } catch { alert('Erreur lors de la suppression.'); }
+  };
 
   const load = () => {
     api.get('/equipes').then(res => setEquipes(toArray(res.data))).catch(() => {});
@@ -161,6 +173,14 @@ export default function EquipesPage() {
               <Link href={`/dashboard/equipes/${eq.id}`} className="flex items-center gap-1 text-sm text-primary hover:underline">
                 Voir détails <ArrowRight size={14} />
               </Link>
+              {canDeleteEquipe(eq) && (
+                <button
+                  onClick={() => handleDelete(eq.id, eq.nom)}
+                  className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 hover:underline ml-auto"
+                >
+                  <Trash2 size={14} /> Supprimer
+                </button>
+              )}
             </div>
             <button
               onClick={() => toggleMembers(eq.id)}
@@ -175,9 +195,7 @@ export default function EquipesPage() {
                   ? <p className="text-sm text-gray-400">Aucun membre actif</p>
                   : (equipeMembers[eq.id] || []).map(m => (
                     <div key={m.id} className="flex items-center gap-2 text-sm">
-                      <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {m.prenom[0]}{m.nom[0]}
-                      </div>
+                      <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={28} />
                       <span>{m.prenom} {m.nom}</span>
                       <Badge className="bg-gray-100 text-gray-600 text-xs">{m.statut}</Badge>
                     </div>

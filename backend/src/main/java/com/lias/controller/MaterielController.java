@@ -4,6 +4,7 @@ import com.lias.dto.request.DistributionRequestDTO;
 import com.lias.dto.request.MaterielRequestDTO;
 import com.lias.entity.DistributionMateriel;
 import com.lias.entity.Materiel;
+import com.lias.entity.MaterielHistorique;
 import com.lias.entity.Membre;
 import com.lias.security.UserPrincipal;
 import com.lias.service.MaterielService;
@@ -24,19 +25,34 @@ public class MaterielController {
     private final MaterielService materielService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Materiel>> getAllMateriels() {
         return ResponseEntity.ok(materielService.getMaterielStock());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Materiel> createMateriel(@Valid @RequestBody MaterielRequestDTO dto) {
-        return ResponseEntity.ok(materielService.ajouterMateriel(dto));
+    public ResponseEntity<Materiel> createMateriel(@Valid @RequestBody MaterielRequestDTO dto,
+                                                    @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(materielService.ajouterMateriel(dto, user.getMembreId()));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Materiel> updateMateriel(@PathVariable Long id,
+                                                    @Valid @RequestBody MaterielRequestDTO dto,
+                                                    @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(materielService.updateMateriel(id, dto, user.getMembreId()));
+    }
+
+    @GetMapping("/sans-distribution")
+    @PreAuthorize("hasRole('DIRECTEUR')")
+    public ResponseEntity<List<Membre>> getMembresSansDistribution() {
+        return ResponseEntity.ok(materielService.getMembresSansDistribution());
     }
 
     @PostMapping("/distribuer")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasRole('DIRECTEUR')")
     public ResponseEntity<Void> distribuerMateriel(@Valid @RequestBody DistributionRequestDTO dto,
                                                     @AuthenticationPrincipal UserPrincipal user) {
         materielService.distribuerMateriel(dto, user.getMembreId());
@@ -55,14 +71,20 @@ public class MaterielController {
         return ResponseEntity.ok(materielService.getHistoriqueDistribution());
     }
 
-    @GetMapping("/{id}/beneficiaires")
+    @GetMapping("/{id}/historique")
     @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    public ResponseEntity<List<MaterielHistorique>> getHistoriqueMateriel(@PathVariable Long id) {
+        return ResponseEntity.ok(materielService.getHistoriqueMateriel(id));
+    }
+
+    @GetMapping("/{id}/beneficiaires")
+    @PreAuthorize("hasRole('DIRECTEUR')")
     public ResponseEntity<List<Membre>> getBeneficiaires(@PathVariable Long id) {
         return ResponseEntity.ok(materielService.getMembresAyantRecu(id));
     }
 
     @GetMapping("/{id}/non-beneficiaires")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasRole('DIRECTEUR')")
     public ResponseEntity<List<Membre>> getNonBeneficiaires(@PathVariable Long id) {
         return ResponseEntity.ok(materielService.getMembresNAyantPasRecu(id));
     }

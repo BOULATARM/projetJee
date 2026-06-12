@@ -37,11 +37,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/roles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/demandes-adhesion/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/demandes-adhesion/statut-email").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/membres/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/publications/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/evenements/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/equipes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/conventions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/stats/**").permitAll()
+
+                        // Participations événements
+                        .requestMatchers("/api/v1/participations/**").authenticated()
+
+                        // Admin comptes management
+                        .requestMatchers("/api/v1/admin/comptes/**").hasRole("ADMIN")
 
                         // Admin / Directeur only
                         .requestMatchers(HttpMethod.GET, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR")
@@ -59,6 +67,7 @@ public class SecurityConfig {
                         // Any authenticated user (DOCTORANT and above)
                         .requestMatchers(HttpMethod.POST, "/api/v1/publications").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/publications/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/publications/**").authenticated()
 
                         // Everything else requires login
                         .anyRequest().authenticated()

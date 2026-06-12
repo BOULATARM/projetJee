@@ -6,45 +6,102 @@ import { Badge } from '@/components/ui/Badge';
 import { getStatutColor, formatDate, formatDateTime } from '@/lib/utils';
 import { evenementService } from '@/services/evenement.service';
 import { documentService } from '@/services/document.service';
-import { discussionService } from '@/services/discussion.service';
 import { membreService } from '@/services/membre.service';
-import { Document, Discussion, EvenementResponse, MembreResponse, RoleSysteme } from '@/types';
-import { ArrowLeft, CalendarDays, Download, MapPin, MessageCircle, PlusCircle, Users } from 'lucide-react';
+import { Document, EvenementResponse, MembreResponse, RoleSysteme } from '@/types';
+import { ArrowLeft, CalendarDays, CheckCircle, Download, MapPin, PlusCircle, Users, XCircle, Clock } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+
+interface ParticipationDTO {
+  id: number;
+  membreId: number;
+  prenom: string;
+  nom: string;
+  photo?: string;
+  statutMembre: string;
+  statut: 'EN_ATTENTE' | 'CONFIRME' | 'REFUSE';
+  dateInscription: string;
+}
+
+const STATUTS_BLOQUES = ['RETRAITE', 'ANCIEN'];
 
 export default function EvenementDetailPage() {
   const { id } = useParams();
   const [event, setEvent] = useState<EvenementResponse | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [membres, setMembres] = useState<MembreResponse[]>([]);
+  const [participations, setParticipations] = useState<ParticipationDTO[]>([]);
   const [selectedOrg, setSelectedOrg] = useState('');
   const [orgRole, setOrgRole] = useState('');
-  const [newMsg, setNewMsg] = useState({ sujet: '', contenu: '' });
-  const { role } = useAuthStore();
-  const canManage = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
+  const [myParticipation, setMyParticipation] = useState<ParticipationDTO | null>(null);
+  const [participating, setParticipating] = useState(false);
+  const { role, statut: myStatutMembre, membreId: myMembreId } = useAuthStore();
+  const isDirecteur = role === RoleSysteme.DIRECTEUR;
+  const canManage = role === RoleSysteme.DIRECTEUR;
+  const isBloque = myStatutMembre ? STATUTS_BLOQUES.includes(myStatutMembre) : false;
+
+  const [annule, setAnnule] = useState(false);
 
   const load = async () => {
     if (!id) return;
     const evtId = Number(id);
-    evenementService.getById(evtId).then(setEvent).catch(() => {});
+    evenementService.getById(evtId).then(e => {
+      setEvent(e);
+      setParticipations((e as any).participations ?? []);
+      setAnnule(false);
+    }).catch((err) => {
+      if (err?.response?.status === 400 || err?.response?.status === 500) setAnnule(true);
+    });
     documentService.getByEvenement(evtId).then(setDocuments).catch(() => {});
-    discussionService.getByEvenement(evtId).then(setDiscussions).catch(() => {});
     membreService.getAll().then(setMembres).catch(() => {});
   };
 
   useEffect(() => { load(); }, [id]);
 
+  // Trouver ma participation
+  useEffect(() => {
+    if (!myMembreId) { setMyParticipation(null); return; }
+    const mine = participations.find(p => p.membreId === myMembreId);
+    setMyParticipation(mine ?? null);
+  }, [participations, myMembreId]);
+
   const handleAddOrganisateur = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !selectedOrg) return;
     await api.post(`/evenements/${id}/organisateurs`, null, {
-      params: { membreId: Number(selectedOrg), roleOrganisation: orgRole || undefined }
+      params: { membreId: Number(selectedOrg), role: orgRole || '' }
     });
     setSelectedOrg(''); setOrgRole('');
-    evenementService.getById(Number(id)).then(setEvent).catch(() => {});
+    evenementService.getById(Number(id)).then(ev => {
+      setEvent(ev);
+      setParticipations((ev as any).participations ?? []);
+    }).catch(() => {});
+  };
+
+  const handleParticiper = async () => {
+    if (!id) return;
+    setParticipating(true);
+    try {
+      const res = await api.post(`/evenements/${id}/participer`);
+      setMyParticipation(res.data);
+      await load();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Erreur lors de la demande de participation.');
+    } finally {
+      setParticipating(false);
+    }
+  };
+
+  const handleConfirmer = async (membreId: number) => {
+    await api.put(`/evenements/${id}/participations/${membreId}/confirmer`);
+    await load();
+  };
+
+  const handleRefuser = async (membreId: number) => {
+    await api.put(`/evenements/${id}/participations/${membreId}/refuser`);
+    await load();
   };
 
   const handleDownload = async (doc: Document) => {
@@ -55,15 +112,26 @@ export default function EvenementDetailPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handlePostDiscussion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!id) return;
-    await discussionService.create({ ...newMsg, evenementId: Number(id) });
-    setNewMsg({ sujet: '', contenu: '' });
-    discussionService.getByEvenement(Number(id)).then(setDiscussions).catch(() => {});
+  const statutBadge = (s: string) => {
+    if (s === 'CONFIRME') return <Badge className="bg-green-100 text-green-700 text-xs">Confirmé</Badge>;
+    if (s === 'EN_ATTENTE') return <Badge className="bg-yellow-100 text-yellow-700 text-xs">En attente</Badge>;
+    return <Badge className="bg-red-100 text-red-600 text-xs">Refusé</Badge>;
   };
 
+  if (annule) return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <XCircle size={48} className="text-red-400 mb-4" />
+      <h2 className="text-xl font-semibold text-gray-700 mb-2">Événement annulé</h2>
+      <p className="text-gray-500 mb-6">Cet événement a été annulé et n'est plus accessible.</p>
+      <Link href="/dashboard/evenements" className="text-primary hover:underline flex items-center gap-1">
+        <ArrowLeft size={16} /> Retour aux événements
+      </Link>
+    </div>
+  );
   if (!event) return <div className="text-gray-500">Chargement...</div>;
+
+  const enAttente = participations.filter(p => p.statut === 'EN_ATTENTE');
+  const confirmes = participations.filter(p => p.statut === 'CONFIRME');
 
   return (
     <div>
@@ -87,6 +155,40 @@ export default function EvenementDetailPage() {
               {event.edition && <div>Édition {event.edition} — {event.annee}</div>}
             </div>
             {event.description && <p className="text-gray-600">{event.description}</p>}
+
+            {/* Bouton de participation — tous les membres authentifiés */}
+            {(
+              <div className="mt-4 pt-4 border-t">
+                {isBloque ? (
+                  <p className="text-sm text-red-500 flex items-center gap-2">
+                    <XCircle size={16} /> Vous ne pouvez pas participer à cet événement.
+                  </p>
+                ) : myParticipation ? (
+                  <div className="flex items-center gap-2">
+                    {myParticipation.statut === 'CONFIRME' && (
+                      <p className="text-sm text-green-600 flex items-center gap-2">
+                        <CheckCircle size={16} /> Votre participation est confirmée.
+                      </p>
+                    )}
+                    {myParticipation.statut === 'EN_ATTENTE' && (
+                      <p className="text-sm text-yellow-600 flex items-center gap-2">
+                        <Clock size={16} /> Votre demande est en attente de confirmation par le directeur.
+                      </p>
+                    )}
+                    {myParticipation.statut === 'REFUSE' && (
+                      <p className="text-sm text-red-500 flex items-center gap-2">
+                        <XCircle size={16} /> Votre participation a été refusée.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <button onClick={handleParticiper} disabled={participating}
+                    className="bg-primary text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                    <PlusCircle size={16} /> {participating ? 'En cours...' : 'Participer à cet événement'}
+                  </button>
+                )}
+              </div>
+            )}
           </Card>
 
           {/* Documents */}
@@ -111,40 +213,49 @@ export default function EvenementDetailPage() {
             )}
           </Card>
 
-          {/* Discussions */}
-          <Card>
-            <h2 className="font-semibold mb-3 flex items-center gap-2"><MessageCircle size={18} /> Discussions</h2>
-            <form onSubmit={handlePostDiscussion} className="grid gap-2 mb-4">
-              <input required value={newMsg.sujet} onChange={e => setNewMsg({ ...newMsg, sujet: e.target.value })}
-                placeholder="Sujet" className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none" />
-              <textarea required rows={2} value={newMsg.contenu} onChange={e => setNewMsg({ ...newMsg, contenu: e.target.value })}
-                placeholder="Message..." className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none" />
-              <button type="submit" className="self-end bg-primary text-white px-4 py-2 text-sm rounded-lg">Publier</button>
-            </form>
-            <div className="space-y-3">
-              {discussions.map(d => (
-                <div key={d.id} className="border-l-4 border-primary pl-3 py-1">
-                  <p className="font-medium text-sm">{d.sujet}</p>
-                  <p className="text-sm text-gray-600">{d.contenu}</p>
-                  <p className="text-xs text-gray-400">{d.auteur?.prenom} {d.auteur?.nom} — {formatDateTime(d.dateCreation)}</p>
-                </div>
-              ))}
-              {discussions.length === 0 && <p className="text-sm text-gray-400">Aucune discussion</p>}
-            </div>
-          </Card>
+          {/* Demandes en attente — directeur uniquement */}
+          {isDirecteur && enAttente.length > 0 && (
+            <Card>
+              <h2 className="font-semibold mb-3 flex items-center gap-2 text-yellow-700">
+                <Clock size={16} /> Demandes en attente ({enAttente.length})
+              </h2>
+              <div className="space-y-2">
+                {enAttente.map(p => (
+                  <div key={p.id} className="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Avatar photo={p.photo} nom={p.nom} prenom={p.prenom} size={28} />
+                      <div>
+                        <p className="text-sm font-medium">{p.prenom} {p.nom}</p>
+                        <p className="text-xs text-gray-400">{p.statutMembre}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleConfirmer(p.membreId)}
+                        className="text-green-600 hover:bg-green-50 p-1 rounded" title="Confirmer">
+                        <CheckCircle size={18} />
+                      </button>
+                      <button onClick={() => handleRefuser(p.membreId)}
+                        className="text-red-500 hover:bg-red-50 p-1 rounded" title="Refuser">
+                        <XCircle size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
 
-        {/* Sidebar: Organisateurs */}
+        {/* Sidebar */}
         <div className="space-y-6">
+          {/* Organisateurs */}
           <Card>
             <h2 className="font-semibold mb-3 flex items-center gap-2"><Users size={18} /> Organisateurs</h2>
             {event.organisateurs?.length > 0 ? (
               <div className="space-y-2">
                 {event.organisateurs.map(o => (
                   <div key={o.id} className="flex items-center gap-2 text-sm">
-                    <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
-                      {o.prenom[0]}{o.nom[0]}
-                    </div>
+                    <Avatar photo={o.photo} nom={o.nom} prenom={o.prenom} size={32} />
                     <div>
                       <p className="font-medium">{o.prenom} {o.nom}</p>
                       {o.roleOrganisation && <p className="text-xs text-gray-400">{o.roleOrganisation}</p>}
@@ -160,8 +271,10 @@ export default function EvenementDetailPage() {
               <form onSubmit={handleAddOrganisateur} className="mt-4 grid gap-2">
                 <select required value={selectedOrg} onChange={e => setSelectedOrg(e.target.value)}
                   className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none">
-                  <option value="">Ajouter un organisateur</option>
-                  {membres.map(m => <option key={m.id} value={m.id}>{m.prenom} {m.nom}</option>)}
+                  <option value="">Sélectionner un membre</option>
+                  {membres
+                    .filter(m => !event.organisateurs?.some(o => o.id === m.id))
+                    .map(m => <option key={m.id} value={m.id}>{m.prenom} {m.nom}</option>)}
                 </select>
                 <input value={orgRole} onChange={e => setOrgRole(e.target.value)}
                   placeholder="Rôle (ex: Coordinateur)" className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none" />
@@ -169,6 +282,29 @@ export default function EvenementDetailPage() {
                   <PlusCircle size={14} /> Ajouter
                 </button>
               </form>
+            )}
+          </Card>
+
+          {/* Participants confirmés */}
+          <Card>
+            <h2 className="font-semibold mb-3 flex items-center gap-2">
+              <CheckCircle size={16} className="text-green-600" /> Participants ({confirmes.length})
+            </h2>
+            {confirmes.length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun participant confirmé.</p>
+            ) : (
+              <div className="space-y-2">
+                {confirmes.map(p => (
+                  <div key={p.id} className="flex items-center gap-2">
+                    <Avatar photo={p.photo} nom={p.nom} prenom={p.prenom} size={28} />
+                    <div>
+                      <p className="text-sm font-medium">{p.prenom} {p.nom}</p>
+                      <p className="text-xs text-gray-400">{p.statutMembre}</p>
+                    </div>
+                    {statutBadge(p.statut)}
+                  </div>
+                ))}
+              </div>
             )}
           </Card>
         </div>

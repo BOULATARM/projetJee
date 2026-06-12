@@ -4,8 +4,9 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getStatutColor, formatDate } from '@/lib/utils';
 import api from '@/lib/api';
-import { DemandeAdhesion, RoleSysteme, StatutDemande } from '@/types';
-import { BookOpen, Building2, CheckCircle, Download, FlaskConical, XCircle } from 'lucide-react';
+import { DemandeAdhesion, Equipe, RoleSysteme, StatutDemande } from '@/types';
+import { BookOpen, Building2, CheckCircle, Download, FlaskConical, XCircle, GraduationCap } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 import { toArray } from '@/lib/normalize';
 import { useAuthStore } from '@/store/authStore';
 
@@ -14,11 +15,17 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/
 export default function DemandesAdhesionPage() {
   const { role } = useAuthStore();
   const [demandes, setDemandes] = useState<DemandeAdhesion[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [actionError, setActionError] = useState<{ id: number; msg: string } | null>(null);
+  // id de la demande pour laquelle on affiche le sélecteur d'équipe
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
+  const [selectedEquipeId, setSelectedEquipeId] = useState<string>('');
+  const [accepting, setAccepting] = useState(false);
 
   const canDecide = role === RoleSysteme.DIRECTEUR;
 
   useEffect(() => {
+    api.get('/equipes').then(r => setEquipes(toArray(r.data))).catch(() => {});
     api.get('/demandes-adhesion').then(res => {
       const list = toArray(res.data) as DemandeAdhesion[];
       // PENDING en premier, puis les décidées
@@ -31,15 +38,21 @@ export default function DemandesAdhesionPage() {
     }).catch(() => {});
   }, []);
 
-  const handleAccepter = async (id: number) => {
+  const handleConfirmerAcceptation = async (id: number) => {
+    if (!selectedEquipeId) return;
+    setAccepting(true);
     setActionError(null);
     try {
-      await api.put(`/demandes-adhesion/${id}/accepter`);
+      await api.put(`/demandes-adhesion/${id}/accepter`, null, { params: { equipeId: Number(selectedEquipeId) } });
       setDemandes(prev => prev.map(d => d.id === id ? { ...d, statut: StatutDemande.ACCEPTEE } : d));
+      setAcceptingId(null);
+      setSelectedEquipeId('');
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         || 'Erreur lors de l\'acceptation';
       setActionError({ id, msg });
+    } finally {
+      setAccepting(false);
     }
   };
 
@@ -62,24 +75,10 @@ export default function DemandesAdhesionPage() {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            {d.photoPath
-              ? <img
-                  src={`${API_BASE}/uploads/${d.photoPath}`}
-                  alt={`${d.prenom} ${d.nom}`}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-primary shrink-0"
-                  onError={e => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    const sib = (e.target as HTMLImageElement).nextElementSibling as HTMLElement | null;
-                    if (sib) sib.style.display = 'flex';
-                  }}
-                />
-              : null}
-            <div
-              className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0"
-              style={d.photoPath ? { display: 'none' } : {}}
-            >
-              {d.prenom[0]}{d.nom[0]}
-            </div>
+            <Avatar
+              photo={d.photoPath ? `${API_BASE}/uploads/${d.photoPath}` : null}
+              nom={d.nom} prenom={d.prenom} size={48} className="shrink-0"
+            />
             <div>
               <p className="font-semibold">{d.prenom} {d.nom}</p>
               <p className="text-sm text-gray-500">{d.email}</p>
@@ -103,6 +102,14 @@ export default function DemandesAdhesionPage() {
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <Badge className={getStatutColor(d.statut)}>{d.statut}</Badge>
             <Badge className="bg-gray-100 text-gray-600">{d.typeMembreDemande}</Badge>
+            {d.equipeId && (() => {
+              const eq = equipes.find(e => e.id === d.equipeId);
+              return eq ? (
+                <span className="flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+                  <GraduationCap size={11} /> {eq.nom}
+                </span>
+              ) : null;
+            })()}
             <span className="text-xs text-gray-400">Déposée le {formatDate(d.dateDepot)}</span>
             {d.dateDecision && (
               <span className="text-xs text-gray-400">Décision le {formatDate(d.dateDecision)}</span>
@@ -150,17 +157,55 @@ export default function DemandesAdhesionPage() {
         {/* Boutons action — uniquement DIRECTEUR et demande PENDING */}
         {d.statut === StatutDemande.PENDING && canDecide && (
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <div className="flex gap-2">
-              <button onClick={() => handleAccepter(d.id)}
-                className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600" title="Accepter">
-                <CheckCircle size={20} />
-              </button>
-              <button onClick={() => handleRefuser(d.id)}
-                className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600" title="Refuser">
-                <XCircle size={20} />
-              </button>
-            </div>
-            {actionError?.id === d.id && (
+            {acceptingId !== d.id ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setAcceptingId(d.id); setSelectedEquipeId(d.equipeId ? String(d.equipeId) : ''); setActionError(null); }}
+                  className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600" title="Accepter"
+                >
+                  <CheckCircle size={20} />
+                </button>
+                <button onClick={() => handleRefuser(d.id)}
+                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600" title="Refuser">
+                  <XCircle size={20} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 min-w-[220px]">
+                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                  <GraduationCap size={13} /> Choisir l&apos;équipe (obligatoire)
+                </div>
+                <select
+                  value={selectedEquipeId}
+                  onChange={e => setSelectedEquipeId(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-green-400 outline-none"
+                >
+                  <option value="">-- Sélectionner une équipe --</option>
+                  {equipes.map(eq => (
+                    <option key={eq.id} value={eq.id}>{eq.nom}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleConfirmerAcceptation(d.id)}
+                    disabled={!selectedEquipeId || accepting}
+                    className="flex-1 bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-green-600 disabled:opacity-50 flex items-center justify-center gap-1"
+                  >
+                    <CheckCircle size={14} /> {accepting ? 'En cours...' : 'Confirmer'}
+                  </button>
+                  <button
+                    onClick={() => { setAcceptingId(null); setSelectedEquipeId(''); }}
+                    className="px-3 py-1.5 border rounded-lg text-sm text-gray-500 hover:bg-gray-50"
+                  >
+                    Annuler
+                  </button>
+                </div>
+                {actionError?.id === d.id && (
+                  <p className="text-xs text-red-500">{actionError.msg}</p>
+                )}
+              </div>
+            )}
+            {actionError?.id === d.id && acceptingId !== d.id && (
               <p className="text-xs text-red-500 max-w-[160px] text-right">{actionError.msg}</p>
             )}
           </div>

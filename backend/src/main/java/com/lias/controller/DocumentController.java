@@ -9,11 +9,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/documents")
@@ -25,6 +27,23 @@ public class DocumentController {
     @GetMapping
     public ResponseEntity<List<Document>> getAllDocuments() {
         return ResponseEntity.ok(documentService.getAllDocuments());
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    public ResponseEntity<List<Document>> getPendingDocuments() {
+        return ResponseEntity.ok(documentService.getDocumentsPending());
+    }
+
+    @GetMapping("/historique")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    public ResponseEntity<List<Document>> getHistorique() {
+        return ResponseEntity.ok(documentService.getHistoriqueDecisions());
+    }
+
+    @GetMapping("/mes-documents")
+    public ResponseEntity<List<Document>> getMesDocuments(@AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(documentService.getMesDocuments(user.getMembreId()));
     }
 
     @PostMapping("/upload")
@@ -43,7 +62,27 @@ public class DocumentController {
         dto.setEvenementId(evenementId);
         dto.setReunionId(reunionId);
         dto.setConventionId(conventionId);
-        return ResponseEntity.ok(documentService.uploadDocument(file, dto, user.getMembreId()));
+
+        boolean isPrivileged = user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DIRECTEUR"));
+
+        return ResponseEntity.ok(documentService.uploadDocument(file, dto, user.getMembreId(), isPrivileged));
+    }
+
+    @PutMapping("/{id}/approuver")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    public ResponseEntity<Document> approuver(@PathVariable Long id,
+                                              @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(documentService.approuverDocument(id, user.getMembreId()));
+    }
+
+    @PutMapping("/{id}/rejeter")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    public ResponseEntity<Document> rejeter(@PathVariable Long id,
+                                            @RequestBody(required = false) Map<String, String> body,
+                                            @AuthenticationPrincipal UserPrincipal user) {
+        String motif = body != null ? body.get("motifRefus") : null;
+        return ResponseEntity.ok(documentService.rejeterDocument(id, motif, user.getMembreId()));
     }
 
     @GetMapping("/evenement/{evenementId}")
@@ -64,9 +103,11 @@ public class DocumentController {
     @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) {
         Resource resource = documentService.downloadDocument(id);
+        String filename = resource.getFilename() != null ? resource.getFilename() : "document.pdf";
+        if (!filename.toLowerCase().endsWith(".pdf")) filename += ".pdf";
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .body(resource);
     }
 

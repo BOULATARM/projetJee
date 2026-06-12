@@ -6,10 +6,11 @@ import { getStatutColor, formatDate } from '@/lib/utils';
 import { evenementService } from '@/services/evenement.service';
 import { EvenementResponse, TypeEvenement, RoleSysteme } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { CalendarDays, FileText, MapPin, PlusCircle, Users, X } from 'lucide-react';
+import { CalendarDays, FileText, MapPin, PlusCircle, Trash2, Users, X } from 'lucide-react';
+import api from '@/lib/api';
 import Link from 'next/link';
 
-const TYPES_EVT: TypeEvenement[] = [TypeEvenement.CONFERENCE, TypeEvenement.SEMINAIRE, TypeEvenement.WORKSHOP, TypeEvenement.JOURNEE_ETUDE, TypeEvenement.REUNION];
+const TYPES_EVT: TypeEvenement[] = [TypeEvenement.CONFERENCE, TypeEvenement.SEMINAIRE, TypeEvenement.WORKSHOP];
 
 export default function EvenementsPage() {
   const [evenements, setEvenements] = useState<EvenementResponse[]>([]);
@@ -22,9 +23,16 @@ export default function EvenementsPage() {
   const [error, setError] = useState('');
   const { role } = useAuthStore();
 
-  const canCreate = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
+  const canCreate = role === RoleSysteme.DIRECTEUR;
 
   const load = () => evenementService.getAll().then(setEvenements).catch(() => {});
+
+  const handleAnnuler = async (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!confirm('Annuler cet événement ? Il sera archivé et inaccessible aux membres.')) return;
+    await api.put(`/evenements/${id}/annuler`);
+    load();
+  };
 
   useEffect(() => { load(); }, []);
 
@@ -115,9 +123,19 @@ export default function EvenementsPage() {
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {evenements.map((e) => (
-          <Link key={e.id} href={`/dashboard/evenements/${e.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+        {evenements.filter(e => e.statut !== 'ANNULE' || canCreate).map((e) => (
+          <Link key={e.id} href={`/dashboard/evenements/${e.id}`}
+            onClick={ev => { if (e.statut === 'ANNULE') ev.preventDefault(); }}>
+            <Card className={`hover:shadow-md transition-shadow cursor-pointer h-full relative ${e.statut === 'ANNULE' ? 'opacity-50 pointer-events-none' : ''}`}>
+              {canCreate && e.statut !== 'ANNULE' && (
+                <button
+                  onClick={(ev) => handleAnnuler(e.id, ev)}
+                  className="absolute top-3 right-3 text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 z-10"
+                  title="Annuler l'événement"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
               <div className="flex justify-between items-start mb-3">
                 <Badge className={getStatutColor(e.statut)}>{e.statut}</Badge>
                 <Badge className="bg-purple-100 text-purple-800">{e.type}</Badge>

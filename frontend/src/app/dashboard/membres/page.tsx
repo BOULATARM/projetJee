@@ -7,12 +7,17 @@ import { getStatutColor } from '@/lib/utils';
 import { membreService } from '@/services/membre.service';
 import { MembreResponse } from '@/types';
 import { Search, UserPlus } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
+import { useAuthStore } from '@/store/authStore';
+import { RoleSysteme } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 export default function MembresPage() {
   const [membres, setMembres] = useState<MembreResponse[]>([]);
   const [search, setSearch] = useState('');
+  const { role } = useAuthStore();
+  const isAdminOnly = role === RoleSysteme.ADMIN;
 
   useEffect(() => {
     membreService.getAll().then(setMembres).catch(() => {});
@@ -26,11 +31,13 @@ export default function MembresPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-heading font-bold text-gray-800">Membres</h1>
-        <div className="flex gap-2">
-          <Link href="/dashboard/membres/new" className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-            <UserPlus size={18} /> Nouveau membre
-          </Link>
-        </div>
+        {!isAdminOnly && (
+          <div className="flex gap-2">
+            <Link href="/dashboard/membres/new" className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+              <UserPlus size={18} /> Nouveau membre
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="relative mb-6">
@@ -49,10 +56,7 @@ export default function MembresPage() {
           <Link key={m.id} href={`/dashboard/membres/${m.id}`}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex items-center gap-4">
-                {m.photo
-                  ? <img src={`${API_BASE.replace('/api/v1', '')}/uploads/${m.photo}`} alt="Photo" className="w-12 h-12 rounded-full object-cover border-2 border-primary" />
-                  : <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-lg">{m.prenom[0]}{m.nom[0]}</div>
-                }
+                <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={48} />
                 <div className="flex-1">
                   <p className="font-semibold text-gray-800">{m.prenom} {m.nom}</p>
                   <p className="text-sm text-gray-500">{m.email}</p>

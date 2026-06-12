@@ -53,6 +53,7 @@ public class Membre {
     private StatutMembre statut;
 
     private Boolean active = true;
+    private LocalDateTime dateDesactivation;
 
     @Enumerated(EnumType.STRING)
     private RoleSysteme systemRole;

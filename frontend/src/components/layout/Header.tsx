@@ -1,13 +1,14 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { Bell, LogOut, User } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { notificationService } from '@/services/notification.service';
 import Link from 'next/link';
+import { Avatar } from '@/components/ui/Avatar';
 
 export function Header() {
-  const { nom, prenom, role, logout } = useAuthStore();
+  const { nom, prenom, role, photo, logout } = useAuthStore();
   const router = useRouter();
   const [notifCount, setNotifCount] = useState(0);
 
@@ -47,8 +48,8 @@ export function Header() {
           )}
         </Link>
 
-        <Link href="/dashboard/profil" className="p-2 hover:bg-gray-100 rounded-lg">
-          <User size={20} className="text-gray-600" />
+        <Link href="/dashboard/profil" className="hover:opacity-80 transition-opacity">
+          <Avatar photo={photo} nom={nom} prenom={prenom} size={36} />
         </Link>
 
         <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded-lg">

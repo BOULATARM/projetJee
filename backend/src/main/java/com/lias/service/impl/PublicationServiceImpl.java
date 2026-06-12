@@ -72,19 +72,22 @@ public class PublicationServiceImpl implements PublicationService {
                 .auteurs(new ArrayList<>())
                 .build();
 
-        if (dto.getAuteurIds() != null) {
-            for (int i = 0; i < dto.getAuteurIds().size(); i++) {
-                Long auteurId = dto.getAuteurIds().get(i);
-                Membre auteur = membreRepository.findById(auteurId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", auteurId));
-                AuteurPublication ap = AuteurPublication.builder()
-                        .membre(auteur)
-                        .publication(publication)
-                        .ordreAuteur(dto.getOrdresAuteurs() != null ? dto.getOrdresAuteurs().get(i) : i + 1)
-                        .auteurCorrespondant(i == 0)
-                        .build();
-                publication.getAuteurs().add(ap);
-            }
+        List<Long> auteurIds = dto.getAuteurIds() != null ? new ArrayList<>(dto.getAuteurIds()) : new ArrayList<>();
+        // Always include the creating member as first author if not already listed
+        if (!auteurIds.contains(membreId)) {
+            auteurIds.add(0, membreId);
+        }
+        for (int i = 0; i < auteurIds.size(); i++) {
+            Long auteurId = auteurIds.get(i);
+            Membre auteur = membreRepository.findById(auteurId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", auteurId));
+            AuteurPublication ap = AuteurPublication.builder()
+                    .membre(auteur)
+                    .publication(publication)
+                    .ordreAuteur(i + 1)
+                    .auteurCorrespondant(i == 0)
+                    .build();
+            publication.getAuteurs().add(ap);
         }
 
         publication = publicationRepository.save(publication);

@@ -69,5 +69,5 @@ public class Evenement {
     @OneToMany(mappedBy = "evenement", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("evenement")
     @Builder.Default
-    private List<Discussion> discussions = new ArrayList<>();
+    private List<ParticipationEvenement> participations = new ArrayList<>();
 }

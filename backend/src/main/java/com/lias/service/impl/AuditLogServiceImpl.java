@@ -56,4 +56,9 @@ public class AuditLogServiceImpl implements AuditLogService {
     public List<AuditLog> getByUtilisateur(String utilisateur) {
         return auditLogRepository.findByUtilisateurOrderByDateDesc(utilisateur);
     }
+
+    @Override
+    public List<AuditLog> getByMembreId(Long membreId) {
+        return auditLogRepository.findByMembreIdOrderByDateDesc(membreId);
+    }
 }
