@@ -115,7 +115,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       <nav className="flex-1 overflow-y-auto py-4">
         {filteredItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Exact match pour /dashboard, startsWith pour le reste
+          const isActive = item.href === '/dashboard'
+            ? pathname === '/dashboard'
+            : pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link key={item.href} href={item.href}
               className={cn(
