@@ -18,6 +18,8 @@ public class MessageDTO {
     private MembreResponseDTO recipient;
     private Long equipeId;
     private String equipeNom;
+    private Long evenementId;
+    private String evenementTitre;
     private LocalDateTime dateEnvoi;
     private boolean lue;
 }

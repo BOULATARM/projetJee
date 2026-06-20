@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/equipes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/conventions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/stats/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/mandats/actif").permitAll()
 
                         // Participations événements
                         .requestMatchers("/api/v1/participations/**").authenticated()

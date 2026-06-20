@@ -41,19 +41,20 @@ const allMenuItems: MenuItem[] = [
   { href: '/dashboard/calendrier', label: 'Calendrier', icon: CalendarClock, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
 
   // Modules internes — permanents uniquement
-  { href: '/dashboard/reunions', label: 'Réunions', icon: Briefcase, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/documents', label: 'Documents', icon: FolderOpen, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/conventions', label: 'Conventions', icon: Handshake, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/reunions', label: 'Réunions', icon: Briefcase, roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/documents', label: 'Documents', icon: FolderOpen, roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/mes-documents', label: 'Mes documents', icon: FolderOpen, roles: ['MEMBRE'], statuts: ['DOCTORANT', 'ASSOCIE', 'PERMANENT'] },
+  { href: '/dashboard/conventions', label: 'Conventions', icon: Handshake, roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
   { href: '/dashboard/messages', label: 'Messagerie', icon: MessageCircle, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
   { href: '/dashboard/demandes-materiel', label: 'Demandes matériel', icon: ClipboardList, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
 
   // Admin/Directeur seulement
 
-  { href: '/dashboard/documents-approbation', label: 'Approbation documents', icon: ClipboardCheck, roles: ['DIRECTEUR', 'ADMIN'] },
+  { href: '/dashboard/documents-approbation', label: 'Approbation documents', icon: ClipboardCheck, roles: ['DIRECTEUR'] },
   { href: '/dashboard/materiel', label: 'Matériel', icon: Box, roles: ['ADMIN', 'DIRECTEUR'] },
-  { href: '/dashboard/demandes-adhesion', label: 'Adhésions', icon: ClipboardCheck, roles: ['ADMIN', 'DIRECTEUR'] },
-  { href: '/dashboard/rapport-annuel', label: 'Rapport annuel', icon: FileText, roles: ['ADMIN', 'DIRECTEUR'] },
-  { href: '/dashboard/statistiques', label: 'Statistiques', icon: BarChart3, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/demandes-adhesion', label: 'Adhésions', icon: ClipboardCheck, roles: ['DIRECTEUR'] },
+  { href: '/dashboard/rapport-annuel', label: 'Rapport annuel', icon: FileText, roles: ['DIRECTEUR'] },
+  { href: '/dashboard/statistiques', label: 'Statistiques', icon: BarChart3, roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
   { href: '/dashboard/admin/comptes', label: 'Comptes', icon: Users, roles: ['ADMIN'] },
   { href: '/dashboard/mandats', label: 'Mandats', icon: Shield, roles: ['ADMIN'] },
   { href: '/dashboard/audit-logs', label: 'Journal d\'audit', icon: ScrollText, roles: ['ADMIN'] },

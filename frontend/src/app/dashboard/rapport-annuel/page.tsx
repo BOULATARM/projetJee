@@ -1,14 +1,21 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { rapportService } from '@/services/rapport.service';
-import { RapportAnnuel } from '@/types';
+import { RapportAnnuel, RoleSysteme } from '@/types';
 import { formatDateTime, getStatutColor } from '@/lib/utils';
 import { Download, FilePlus, ChevronDown, ChevronUp, Users, BookOpen, Calendar, Presentation, FileText } from 'lucide-react';
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export default function RapportAnnuelPage() {
+  const { role } = useAuthStore();
+  const router = useRouter();
+  useEffect(() => {
+    if (role && role === RoleSysteme.ADMIN) router.replace('/dashboard');
+  }, [role]);
   const [rapports, setRapports] = useState<RapportAnnuel[]>([]);
   const [annee, setAnnee] = useState(new Date().getFullYear());
   const [selected, setSelected] = useState<RapportAnnuel | null>(null);

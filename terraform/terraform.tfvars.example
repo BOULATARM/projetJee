@@ -1,0 +1,11 @@
+# Copy this file to terraform.tfvars and fill in the values
+# NEVER commit terraform.tfvars to git
+
+aws_region        = "eu-west-3"
+environment       = "prod"
+app_name          = "lias"
+
+key_pair_name     = "lias-keypair"        # Name of your existing AWS key pair
+my_ip             = "X.X.X.X/32"         # Your public IP for SSH access
+
+db_password       = "CHANGE_ME_STRONG_PASSWORD"

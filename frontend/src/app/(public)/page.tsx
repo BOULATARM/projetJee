@@ -8,7 +8,8 @@ import { statsService } from '@/services/stats.service';
 import { membreService } from '@/services/membre.service';
 import { publicationService } from '@/services/publication.service';
 import { evenementService } from '@/services/evenement.service';
-import { DashboardStats, MembreResponse, PublicationResponse, EvenementResponse } from '@/types';
+import { equipeService } from '@/services/equipe.service';
+import { DashboardStats, MembreResponse, PublicationResponse, EvenementResponse, Equipe } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 
 export default function HomePage() {
@@ -16,12 +17,24 @@ export default function HomePage() {
   const [membres, setMembres] = useState<MembreResponse[]>([]);
   const [publications, setPublications] = useState<PublicationResponse[]>([]);
   const [evenements, setEvenements] = useState<EvenementResponse[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
+  const [equipesLoaded, setEquipesLoaded] = useState(false);
 
   useEffect(() => {
-    statsService.getDashboard().then(setStats).catch(() => {});
-    membreService.getAll().then(setMembres).catch(() => {});
-    publicationService.getAll().then(setPublications).catch(() => {});
-    evenementService.getAll().then(setEvenements).catch(() => {});
+    Promise.allSettled([
+      statsService.getDashboard(),
+      membreService.getAll(),
+      publicationService.getAll(),
+      evenementService.getAll(),
+      equipeService.getAll(),
+    ]).then(([s, m, p, e, eq]) => {
+      if (s.status === 'fulfilled') setStats(s.value);
+      if (m.status === 'fulfilled') setMembres(m.value);
+      if (p.status === 'fulfilled') setPublications(p.value);
+      if (e.status === 'fulfilled') setEvenements(e.value);
+      if (eq.status === 'fulfilled') setEquipes(eq.value);
+      setEquipesLoaded(true);
+    });
   }, []);
 
   return (
@@ -34,6 +47,7 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center gap-3 flex-wrap">
             <Link href="/membres" className="text-white hover:text-blue-200 text-sm">Membres</Link>
+            <Link href="/equipes" className="text-white hover:text-blue-200 text-sm">Équipes</Link>
             <Link href="/evenements" className="text-white hover:text-blue-200 text-sm">Événements</Link>
             <Link href="/publications" className="text-white hover:text-blue-200 text-sm">Publications</Link>
             <Link href="/auth/login" className="bg-white text-primary px-4 py-2 rounded-lg font-medium hover:bg-blue-50">
@@ -139,6 +153,40 @@ export default function HomePage() {
             </div>
           </section>
         </div>
+
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-heading font-bold text-primary">Nos Équipes</h2>
+            <Link href="/equipes" className="text-primary hover:underline text-sm">Voir toutes les équipes →</Link>
+          </div>
+          {!equipesLoaded ? (
+            <p className="text-sm text-gray-400">Chargement...</p>
+          ) : equipes.length === 0 ? (
+            <p className="text-sm text-gray-400">Aucune équipe disponible.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {equipes.slice(0, 3).map((eq) => (
+                <Link key={eq.id} href={`/equipes/${eq.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full p-5 flex flex-col gap-2">
+                    <h3 className="font-bold text-gray-900">{eq.nom}</h3>
+                    {eq.axeRecherche && (
+                      <p className="text-xs text-blue-600 font-medium">{eq.axeRecherche}</p>
+                    )}
+                    {eq.description && (
+                      <p className="text-sm text-gray-500 line-clamp-2 flex-1">{eq.description}</p>
+                    )}
+                    {eq.chefEquipe && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Avatar photo={eq.chefEquipe.photo} nom={eq.chefEquipe.nom} prenom={eq.chefEquipe.prenom} size={24} />
+                        <p className="text-xs text-gray-500">{eq.chefEquipe.prenom} {eq.chefEquipe.nom}</p>
+                      </div>
+                    )}
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="mb-12">
           <h2 className="text-xl font-heading font-bold text-primary mb-4">Prochains événements</h2>

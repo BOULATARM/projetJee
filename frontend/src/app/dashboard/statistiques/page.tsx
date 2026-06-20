@@ -1,13 +1,21 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { statsService } from '@/services/stats.service';
-import { DashboardStats } from '@/types';
+import { DashboardStats, RoleSysteme } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { useAuthStore } from '@/store/authStore';
 
 const COLORS = ['#1e3a5f', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function StatistiquesPage() {
+  const { role } = useAuthStore();
+  const router = useRouter();
+  useEffect(() => {
+    if (role && role === RoleSysteme.ADMIN) router.replace('/dashboard');
+  }, [role]);
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {

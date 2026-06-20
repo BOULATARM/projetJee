@@ -1,0 +1,57 @@
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /run/nginx.pid;
+
+events { worker_connections 1024; }
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    sendfile      on;
+    keepalive_timeout 65;
+
+    # Security headers
+    add_header X-Frame-Options           "SAMEORIGIN"   always;
+    add_header X-Content-Type-Options    "nosniff"      always;
+    add_header X-XSS-Protection          "1; mode=block" always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy        "geolocation=(), microphone=()" always;
+    server_tokens off;
+
+    # Rate limiting zones
+    limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+
+    server {
+        listen 80;
+        server_name _;
+
+        # API → Spring Boot
+        location /api/ {
+            limit_req zone=api burst=40 nodelay;
+            proxy_pass         http://127.0.0.1:8080;
+            proxy_set_header   Host              $host;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_read_timeout 60s;
+        }
+
+        # Auth endpoints stricter rate limit
+        location /api/auth/login {
+            limit_req zone=login burst=10 nodelay;
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        # Frontend → Next.js
+        location / {
+            proxy_pass       http://127.0.0.1:3000;
+            proxy_set_header Host            $host;
+            proxy_set_header X-Real-IP       $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}

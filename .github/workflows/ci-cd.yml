@@ -1,0 +1,438 @@
+name: LIAS CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION:    eu-west-3
+  IMAGE_TAG:     ${{ github.sha }}
+
+# Cancel in-progress runs on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 1 — SAST & Dependency scanning (runs on every push/PR)
+# ═══════════════════════════════════════════════════════════════════════════════
+  sast:
+    name: "Security — SAST & Dependencies"
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── CodeQL (Java + TypeScript) ─────────────────────────────────────────
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java, javascript
+          queries: security-and-quality
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: temurin
+          cache: maven
+
+      - name: Build backend for CodeQL
+        run: mvn package -DskipTests -q -f backend/pom.xml
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:java"
+
+      # ── OWASP Dependency-Check (backend) ──────────────────────────────────
+      - name: OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "lias-backend"
+          path: "backend"
+          format: "HTML,SARIF"
+          args: >
+            --failOnCVSS 8
+            --enableRetired
+
+      - name: Upload OWASP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owasp-dependency-check
+          path: reports/
+
+      # ── Semgrep SAST ──────────────────────────────────────────────────────
+      - name: Semgrep SAST scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/java
+            p/javascript
+            p/typescript
+            p/owasp-top-ten
+            p/react
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 2 — Build & Test
+# ═══════════════════════════════════════════════════════════════════════════════
+  build-test:
+    name: "Build & Test"
+    runs-on: ubuntu-latest
+    needs: sast
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: temurin
+          cache: maven
+
+      - name: Run backend tests
+        run: mvn verify -f backend/pom.xml
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-report
+          path: backend/target/surefire-reports/
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        run: npm ci --legacy-peer-deps
+        working-directory: frontend
+
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 3 — Build Docker images + Trivy container scan
+# ═══════════════════════════════════════════════════════════════════════════════
+  docker-build-scan:
+    name: "Docker Build & Container Scan"
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+      security-events: write
+
+    outputs:
+      ecr_registry: ${{ steps.login-ecr.outputs.registry }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume:    ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region:        ${{ env.AWS_REGION }}
+          role-session-name: github-actions-lias
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Backend image ──────────────────────────────────────────────────────
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/backend/Dockerfile
+          push: false
+          load: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/lias/backend:${{ env.IMAGE_TAG }}
+            ${{ steps.login-ecr.outputs.registry }}/lias/backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to:   type=gha,scope=backend,mode=max
+
+      - name: Trivy scan — backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref:    "${{ steps.login-ecr.outputs.registry }}/lias/backend:${{ env.IMAGE_TAG }}"
+          format:       sarif
+          output:       trivy-backend.sarif
+          severity:     CRITICAL,HIGH
+          exit-code:    "1"
+          ignore-unfixed: true
+
+      - name: Upload Trivy backend results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
+
+      # ── Frontend image ─────────────────────────────────────────────────────
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/frontend/Dockerfile
+          push: false
+          load: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/lias/frontend:${{ env.IMAGE_TAG }}
+            ${{ steps.login-ecr.outputs.registry }}/lias/frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to:   type=gha,scope=frontend,mode=max
+
+      - name: Trivy scan — frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref:    "${{ steps.login-ecr.outputs.registry }}/lias/frontend:${{ env.IMAGE_TAG }}"
+          format:       sarif
+          output:       trivy-frontend.sarif
+          severity:     CRITICAL,HIGH
+          exit-code:    "1"
+          ignore-unfixed: true
+
+      - name: Upload Trivy frontend results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend
+
+      # ── Push images to ECR ─────────────────────────────────────────────────
+      - name: Push images to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/lias/backend:${{ env.IMAGE_TAG }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/lias/backend:latest
+          docker push ${{ steps.login-ecr.outputs.registry }}/lias/frontend:${{ env.IMAGE_TAG }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/lias/frontend:latest
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 4 — Terraform plan/apply
+# ═══════════════════════════════════════════════════════════════════════════════
+  terraform:
+    name: "Terraform — Provision AWS"
+    runs-on: ubuntu-latest
+    needs: docker-build-scan
+    if: github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: terraform
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume:    ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region:        ${{ env.AWS_REGION }}
+          role-session-name: github-actions-terraform
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="key_pair_name=${{ secrets.AWS_KEY_PAIR_NAME }}" \
+            -var="my_ip=${{ secrets.ADMIN_IP }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Export Terraform outputs
+        id: tf-outputs
+        run: |
+          echo "alb_dns=$(terraform output -raw alb_dns_name)"       >> $GITHUB_OUTPUT
+          echo "app_ip=$(terraform output -raw app_public_ip)"       >> $GITHUB_OUTPUT
+          echo "ecr_registry=$(terraform output -raw ecr_backend_url | cut -d/ -f1)" >> $GITHUB_OUTPUT
+          echo "rds_endpoint=$(terraform output -raw rds_endpoint)"  >> $GITHUB_OUTPUT
+
+    outputs:
+      alb_dns:      ${{ steps.tf-outputs.outputs.alb_dns }}
+      app_ip:       ${{ steps.tf-outputs.outputs.app_ip }}
+      ecr_registry: ${{ steps.tf-outputs.outputs.ecr_registry }}
+      rds_endpoint: ${{ steps.tf-outputs.outputs.rds_endpoint }}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 5 — Ansible deploy
+# ═══════════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: "Ansible — Deploy to EC2"
+    runs-on: ubuntu-latest
+    needs: terraform
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume:    ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region:        ${{ env.AWS_REGION }}
+          role-session-name: github-actions-ansible
+
+      - name: Install Ansible + AWS collections
+        run: |
+          pip install ansible boto3 botocore
+          ansible-galaxy collection install amazon.aws community.docker ansible.posix
+
+      - name: Write SSH private key
+        run: |
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/lias-keypair.pem
+          chmod 600 ~/.ssh/lias-keypair.pem
+
+      - name: Run Ansible deploy playbook
+        env:
+          AWS_REGION:    ${{ env.AWS_REGION }}
+          ECR_REGISTRY:  ${{ needs.terraform.outputs.ecr_registry }}
+          IMAGE_TAG:     ${{ env.IMAGE_TAG }}
+          RDS_ENDPOINT:  ${{ needs.terraform.outputs.rds_endpoint }}
+          DB_USERNAME:   liasadmin
+          DB_PASSWORD:   ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET:    ${{ secrets.JWT_SECRET }}
+          ALB_DNS:       ${{ needs.terraform.outputs.alb_dns }}
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          ansible-playbook ansible/playbooks/deploy.yml \
+            -i ansible/inventory/aws_ec2.yml \
+            --private-key ~/.ssh/lias-keypair.pem
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 6 — DAST pentest avec OWASP ZAP (post-deploy)
+# ═══════════════════════════════════════════════════════════════════════════════
+  pentest-dast:
+    name: "Security — DAST Pentest (OWASP ZAP)"
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for app to be ready
+        run: |
+          TARGET="${{ needs.terraform.outputs.alb_dns }}"
+          echo "Waiting for $TARGET..."
+          for i in {1..20}; do
+            if curl -sf "$TARGET" > /dev/null; then
+              echo "App is ready!"; break
+            fi
+            echo "Attempt $i/20 – waiting 15s..."; sleep 15
+          done
+
+      # ── ZAP Baseline Scan ─────────────────────────────────────────────────
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target:       ${{ needs.terraform.outputs.alb_dns }}
+          rules_file_name: .zap/rules.tsv
+          cmd_options:  "-a -j"
+          issue_title:  "ZAP Baseline Scan – ${{ github.sha }}"
+          token:        ${{ secrets.GITHUB_TOKEN }}
+
+      # ── ZAP Full Scan (API) ────────────────────────────────────────────────
+      - name: OWASP ZAP API Scan
+        uses: zaproxy/action-api-scan@v0.7.0
+        with:
+          target:      "${{ needs.terraform.outputs.alb_dns }}/v3/api-docs"
+          format:      openapi
+          cmd_options: "-a"
+          token:       ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-security-reports-${{ github.sha }}
+          path: |
+            report_html.html
+            report_json.json
+          retention-days: 30
+
+      # ── Nuclei fast vuln scan ─────────────────────────────────────────────
+      - name: Nuclei vulnerability scan
+        uses: projectdiscovery/nuclei-action@main
+        with:
+          target:   ${{ needs.terraform.outputs.alb_dns }}
+          flags:    "-severity critical,high -stats"
+          output:   nuclei-results.txt
+
+      - name: Upload Nuclei results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nuclei-scan-${{ github.sha }}
+          path: nuclei-results.txt
+          retention-days: 30
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# JOB 7 — Notify
+# ═══════════════════════════════════════════════════════════════════════════════
+  notify:
+    name: "Notify Deployment Result"
+    runs-on: ubuntu-latest
+    needs: [pentest-dast]
+    if: always() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST | ${{ needs.sast.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ needs.build-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build & Scan | ${{ needs.docker-build-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform | ${{ needs.terraform.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy (Ansible) | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DAST Pentest | ${{ needs.pentest-dast.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**App URL:** ${{ needs.terraform.outputs.alb_dns }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image tag:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY

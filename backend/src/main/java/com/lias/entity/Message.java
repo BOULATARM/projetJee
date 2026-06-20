@@ -41,6 +41,11 @@ public class Message {
     @JoinColumn(name = "equipe_id")
     private Equipe equipe;
 
+    // pour EVENT
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "evenement_id")
+    private Evenement evenement;
+
     @CreationTimestamp
     private LocalDateTime dateEnvoi;
 

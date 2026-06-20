@@ -35,7 +35,8 @@ public class MandatServiceImpl implements MandatService {
 
     @Override
     @Transactional
-    public Mandat creerMandat(Long directeurId, Long viceDirecteurId, LocalDate dateDebut, String adminEmail) {
+    public Mandat creerMandat(Long directeurId, Long viceDirecteurId, List<Long> chefsEquipeIds,
+                               LocalDate dateDebut, String adminEmail) {
         Membre directeur = membreRepository.findById(directeurId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", directeurId));
         Membre viceDirecteur = viceDirecteurId != null ?
@@ -43,9 +44,27 @@ public class MandatServiceImpl implements MandatService {
                         .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", viceDirecteurId))
                 : null;
 
+        List<Membre> chefs = chefsEquipeIds != null
+                ? membreRepository.findAllById(chefsEquipeIds)
+                : List.of();
+
+        // Clôturer l'ancien mandat actif
         mandatRepository.findByActifTrue().ifPresent(m -> {
             m.setActif(false);
             m.setDateFin(dateDebut.minusDays(1));
+            // Réinitialiser les rôles de l'ancien mandat
+            if (m.getDirecteur() != null) {
+                m.getDirecteur().setSystemRole(RoleSysteme.MEMBRE);
+                membreRepository.save(m.getDirecteur());
+            }
+            if (m.getViceDirecteur() != null) {
+                m.getViceDirecteur().setSystemRole(RoleSysteme.MEMBRE);
+                membreRepository.save(m.getViceDirecteur());
+            }
+            m.getChefsEquipe().forEach(c -> {
+                c.setSystemRole(RoleSysteme.MEMBRE);
+                membreRepository.save(c);
+            });
             mandatRepository.save(m);
         });
 
@@ -57,6 +76,11 @@ public class MandatServiceImpl implements MandatService {
             membreRepository.save(viceDirecteur);
         }
 
+        chefs.forEach(c -> {
+            c.setSystemRole(RoleSysteme.CHEF_EQUIPE);
+            membreRepository.save(c);
+        });
+
         java.util.List<com.lias.entity.Laboratoire> labos = laboratoireRepository.findAll();
         com.lias.entity.Laboratoire labo = labos.isEmpty() ? null : labos.get(0);
 
@@ -66,9 +90,14 @@ public class MandatServiceImpl implements MandatService {
                 .actif(true)
                 .directeur(directeur)
                 .viceDirecteur(viceDirecteur)
+                .chefsEquipe(new java.util.ArrayList<>(chefs))
                 .build();
 
         Mandat saved = mandatRepository.save(mandat);
+
+        String chefsNoms = chefs.stream()
+                .map(c -> c.getPrenom() + " " + c.getNom())
+                .collect(java.util.stream.Collectors.joining(", "));
 
         auditLogRepository.save(AuditLog.builder()
                 .entite("Mandat").action("CREATION_MANDAT")
@@ -78,6 +107,7 @@ public class MandatServiceImpl implements MandatService {
                 .date(LocalDateTime.now())
                 .details("Nouveau mandat créé — Directeur: " + directeur.getPrenom() + " " + directeur.getNom()
                         + (viceDirecteur != null ? ", Vice-directeur: " + viceDirecteur.getPrenom() + " " + viceDirecteur.getNom() : "")
+                        + (!chefsNoms.isEmpty() ? ", Chefs d'équipe: " + chefsNoms : "")
                         + " — Début: " + dateDebut)
                 .build());
 
@@ -100,6 +130,10 @@ public class MandatServiceImpl implements MandatService {
             mandat.getViceDirecteur().setSystemRole(RoleSysteme.MEMBRE);
             membreRepository.save(mandat.getViceDirecteur());
         }
+        mandat.getChefsEquipe().forEach(c -> {
+            c.setSystemRole(RoleSysteme.MEMBRE);
+            membreRepository.save(c);
+        });
 
         mandatRepository.save(mandat);
 

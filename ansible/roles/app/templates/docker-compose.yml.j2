@@ -1,0 +1,36 @@
+services:
+  backend:
+    image: {{ ecr_registry }}/lias/backend:{{ image_tag }}
+    container_name: lias-backend
+    restart: unless-stopped
+    env_file: /opt/lias/.env
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://{{ rds_endpoint }}/ProjetJee?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: "{{ db_username }}"
+      SPRING_DATASOURCE_PASSWORD: "{{ db_password }}"
+      JWT_SECRET: "{{ jwt_secret }}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - /opt/lias/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: {{ ecr_registry }}/lias/frontend:{{ image_tag }}
+    container_name: lias-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: "http://{{ alb_dns }}"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

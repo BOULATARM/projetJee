@@ -7,6 +7,11 @@ export const documentService = {
     return data;
   },
 
+  getMesDocuments: async (): Promise<Document[]> => {
+    const { data } = await api.get('/documents/mes-documents');
+    return Array.isArray(data) ? data : [];
+  },
+
   upload: async (file: File, dto: Record<string, unknown>): Promise<Document> => {
     const formData = new FormData();
     formData.append('file', file);

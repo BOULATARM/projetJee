@@ -42,7 +42,37 @@ public class MembreServiceImpl implements MembreService {
 
     @Override
     public List<MembreResponseDTO> getAllMembres() {
-        return membreMapper.toResponseDTOList(membreRepository.findByActiveTrue());
+        return membreRepository.findByActiveTrue().stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    private MembreResponseDTO toResponseDTO(Membre m) {
+        // Équipe active
+        String equipeNom = affiliationRepository.findByMembreIdAndActifTrue(m.getId())
+                .map(a -> a.getEquipe() != null ? a.getEquipe().getNom() : null)
+                .orElse(null);
+        Long equipeId = affiliationRepository.findByMembreIdAndActifTrue(m.getId())
+                .map(a -> a.getEquipe() != null ? a.getEquipe().getId() : null)
+                .orElse(null);
+
+        return MembreResponseDTO.builder()
+                .id(m.getId())
+                .nom(m.getNom())
+                .prenom(m.getPrenom())
+                .email(m.getEmail())
+                .photo(m.getPhoto())
+                .biographie(m.getBiographie())
+                .centresInteret(m.getCentresInteret())
+                .dateEmbauche(m.getDateEmbauche())
+                .etablissementOrigine(m.getEtablissementOrigine())
+                .laboratoireOrigine(m.getLaboratoireOrigine())
+                .statut(m.getStatut())
+                .active(m.getActive())
+                .roleActuel(m.getSystemRole())
+                .equipeActuelle(equipeNom)
+                .equipeId(equipeId)
+                .build();
     }
 
     @Override

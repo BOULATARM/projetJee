@@ -41,7 +41,7 @@ export default function MandatsPage() {
   const [historique, setHistorique]   = useState<Mandat[]>([]);
   const [audit, setAudit]             = useState<MandatAudit[]>([]);
   const [membres, setMembres]         = useState<MembreResponse[]>([]);
-  const [form, setForm]               = useState({ directeurId: '', viceDirecteurId: '' });
+  const [form, setForm]               = useState({ directeurId: '', viceDirecteurId: '', chefsEquipeIds: [] as string[] });
   const [loading, setLoading]         = useState(false);
   const [toast, setToast]             = useState('');
   const [auditExpanded, setAuditExpanded] = useState(true);
@@ -63,7 +63,7 @@ export default function MandatsPage() {
     setActif(act);
     setHistorique(hist);
     setAudit(aud);
-    setMembres(memb);
+    setMembres(memb.filter(m => m.statut === 'PERMANENT'));
   };
 
   useEffect(() => { load(); }, []);
@@ -76,8 +76,9 @@ export default function MandatsPage() {
       await mandatService.create({
         directeurId: Number(form.directeurId),
         viceDirecteurId: form.viceDirecteurId ? Number(form.viceDirecteurId) : undefined,
+        chefsEquipeIds: form.chefsEquipeIds.length > 0 ? form.chefsEquipeIds : undefined,
       });
-      setForm({ directeurId: '', viceDirecteurId: '' });
+      setForm({ directeurId: '', viceDirecteurId: '', chefsEquipeIds: [] });
       showToast('Mandat créé avec succès.');
       await load();
     } catch {
@@ -143,6 +144,18 @@ export default function MandatsPage() {
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Vice-directeur</p>
                     <MemberChip membre={actif.viceDirecteur} />
+                  </div>
+                )}
+                {actif.chefsEquipe && actif.chefsEquipe.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                      Chefs d&apos;équipe ({actif.chefsEquipe.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {actif.chefsEquipe.map(c => (
+                        <MemberChip key={c.id} membre={c} />
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-xs text-gray-400 pt-1">
@@ -286,6 +299,16 @@ export default function MandatsPage() {
                       <div>
                         <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Vice-directeur</p>
                         <MemberChip membre={m.viceDirecteur} />
+                      </div>
+                    )}
+                    {m.chefsEquipe && m.chefsEquipe.length > 0 && (
+                      <div className="sm:col-span-2">
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                          Chefs d&apos;équipe ({m.chefsEquipe.length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {m.chefsEquipe.map(c => <MemberChip key={c.id} membre={c} />)}
+                        </div>
                       </div>
                     )}
                   </div>

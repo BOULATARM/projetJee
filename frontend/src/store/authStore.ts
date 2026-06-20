@@ -16,16 +16,25 @@ interface AuthState {
   loadFromStorage: () => void;
 }
 
+const getInitialState = () => {
+  if (typeof window === 'undefined') return { isAuthenticated: false, token: null, membreId: null, email: null, role: null, statut: null, nom: null, prenom: null, photo: null };
+  const token = localStorage.getItem('token');
+  if (!token) return { isAuthenticated: false, token: null, membreId: null, email: null, role: null, statut: null, nom: null, prenom: null, photo: null };
+  return {
+    token,
+    membreId: Number(localStorage.getItem('membreId')),
+    email: localStorage.getItem('email'),
+    role: localStorage.getItem('role') as RoleSysteme,
+    statut: (localStorage.getItem('statut') as StatutMembre) || null,
+    nom: localStorage.getItem('nom'),
+    prenom: localStorage.getItem('prenom'),
+    photo: localStorage.getItem('photo'),
+    isAuthenticated: true,
+  };
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
-  membreId: null,
-  email: null,
-  role: null,
-  statut: null,
-  nom: null,
-  prenom: null,
-  photo: null,
-  isAuthenticated: false,
+  ...getInitialState(),
 
   setAuth: (auth: AuthResponse) => {
     localStorage.setItem('token', auth.token);

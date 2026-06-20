@@ -1,0 +1,25 @@
+# Dynamic inventory via AWS EC2 plugin
+# Requires: pip install boto3 botocore
+# Usage: ansible-inventory -i inventory/aws_ec2.yml --list
+plugin: amazon.aws.aws_ec2
+
+regions:
+  - eu-west-3
+
+filters:
+  tag:Project: LIAS
+  tag:ManagedBy: Terraform
+  instance-state-name: running
+
+keyed_groups:
+  - key: tags.Environment
+    prefix: env
+  - key: tags.Name
+    prefix: name
+
+hostnames:
+  - dns-name
+  - ip-address
+
+compose:
+  ansible_host: public_ip_address

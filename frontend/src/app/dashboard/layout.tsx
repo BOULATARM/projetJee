@@ -7,29 +7,23 @@ import { Header } from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loadFromStorage } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    loadFromStorage();
-    setChecked(true);
-  }, [loadFromStorage]);
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!checked) return;
-    if (!isAuthenticated) {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (!token) {
-        router.push('/auth/login');
-      }
+    if (mounted && !isAuthenticated) {
+      router.push('/auth/login');
     }
-  }, [isAuthenticated, router, checked]);
+  }, [mounted, isAuthenticated, router]);
 
-  if (!checked || (!isAuthenticated && typeof window !== 'undefined' && !localStorage.getItem('token'))) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-400">Chargement...</div></div>;
-  }
+  if (!mounted) return null;
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-gray-50">

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { getStatutColor, formatDate } from '@/lib/utils';
@@ -14,6 +15,11 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/
 
 export default function DemandesAdhesionPage() {
   const { role } = useAuthStore();
+  const router = useRouter();
+  useEffect(() => {
+    if (role && role === RoleSysteme.ADMIN) router.replace('/dashboard');
+  }, [role]);
+
   const [demandes, setDemandes] = useState<DemandeAdhesion[]>([]);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [actionError, setActionError] = useState<{ id: number; msg: string } | null>(null);

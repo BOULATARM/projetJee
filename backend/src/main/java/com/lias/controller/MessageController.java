@@ -3,7 +3,10 @@ package com.lias.controller;
 import com.lias.dto.response.MembreResponseDTO;
 import com.lias.dto.response.MessageDTO;
 import com.lias.entity.MessageType;
+import com.lias.enums.StatutParticipation;
+import com.lias.repository.EvenementRepository;
 import com.lias.repository.MembreRepository;
+import com.lias.repository.ParticipationEvenementRepository;
 import com.lias.security.UserPrincipal;
 import com.lias.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/messages")
@@ -22,6 +26,8 @@ public class MessageController {
 
     private final MessageService messageService;
     private final MembreRepository membreRepository;
+    private final EvenementRepository evenementRepository;
+    private final ParticipationEvenementRepository participationRepository;
 
     // ── envoi ────────────────────────────────────────────────────────────────
 
@@ -33,10 +39,11 @@ public class MessageController {
             @RequestParam MessageType type,
             @RequestParam(required = false) Long recipientId,
             @RequestParam(required = false) Long equipeId,
+            @RequestParam(required = false) Long evenementId,
             @RequestPart(required = false) MultipartFile fichier) {
 
         MessageDTO dto = messageService.sendMessage(
-                principal.getMembreId(), contenu, type, recipientId, equipeId, fichier);
+                principal.getMembreId(), contenu, type, recipientId, equipeId, evenementId, fichier);
         return ResponseEntity.ok(dto);
     }
 
@@ -76,6 +83,31 @@ public class MessageController {
                         .email(m.getEmail()).photo(m.getPhoto()).build())
                 .toList();
         return ResponseEntity.ok(partners);
+    }
+
+    // ── événements ───────────────────────────────────────────────────────────
+
+    // liste des événements auxquels le membre participe (pour la sidebar)
+    @GetMapping("/mes-evenements")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> getMesEvenements(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<Map<String, Object>> result = participationRepository
+                .findAll().stream()
+                .filter(p -> p.getMembre().getId().equals(principal.getMembreId()))
+                .map(p -> Map.<String, Object>of(
+                        "id", p.getEvenement().getId(),
+                        "titre", p.getEvenement().getTitre(),
+                        "statut", p.getEvenement().getStatut()))
+                .distinct()
+                .toList();
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/event/{evenementId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<MessageDTO>> getEventMessages(@PathVariable Long evenementId) {
+        return ResponseEntity.ok(messageService.getEventMessages(evenementId));
     }
 
     // marquer messages directs comme lus

@@ -39,8 +39,8 @@ public class DocumentServiceImpl implements DocumentService {
 
         String filePath = fileStorageService.uploadFile(file, "documents");
 
-        // Documents from ADMIN/DIRECTEUR are directly approved; members' documents need approval
-        StatutDocument statut = isPrivileged ? StatutDocument.APPROUVE : StatutDocument.PENDING;
+        // All documents require director approval regardless of the uploader's role
+        StatutDocument statut = StatutDocument.PENDING;
 
         Document document = Document.builder()
                 .nom(dto.getNom() != null ? dto.getNom() : file.getOriginalFilename())

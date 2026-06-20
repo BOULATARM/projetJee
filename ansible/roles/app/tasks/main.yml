@@ -1,0 +1,69 @@
+---
+- name: Authenticate to Amazon ECR
+  ansible.builtin.shell: |
+    aws ecr get-login-password --region {{ aws_region }} | \
+    docker login --username AWS --password-stdin {{ ecr_registry }}
+  become: true
+  changed_when: false
+
+- name: Create app directory
+  ansible.builtin.file:
+    path: /opt/lias
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: "0750"
+  become: true
+
+- name: Create uploads directory
+  ansible.builtin.file:
+    path: /opt/lias/uploads
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: "0750"
+  become: true
+
+- name: Deploy docker-compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/lias/docker-compose.yml
+    owner: ec2-user
+    group: ec2-user
+    mode: "0640"
+  become: true
+  notify: Restart app
+
+- name: Write environment file
+  ansible.builtin.template:
+    src: .env.j2
+    dest: /opt/lias/.env
+    owner: ec2-user
+    group: ec2-user
+    mode: "0600"
+  become: true
+  notify: Restart app
+
+- name: Pull latest images
+  ansible.builtin.shell: docker compose -f /opt/lias/docker-compose.yml pull
+  become: true
+  register: pull_result
+  changed_when: "'Pull complete' in pull_result.stdout or 'Downloaded newer' in pull_result.stdout"
+
+- name: Start application stack
+  ansible.builtin.shell: docker compose -f /opt/lias/docker-compose.yml up -d --remove-orphans
+  become: true
+
+- name: Wait for backend health check
+  ansible.builtin.uri:
+    url: http://localhost:8080/actuator/health
+    status_code: 200
+  register: health
+  retries: 15
+  delay: 10
+  until: health.status == 200
+
+handlers:
+  - name: Restart app
+    ansible.builtin.shell: docker compose -f /opt/lias/docker-compose.yml up -d --force-recreate
+    become: true

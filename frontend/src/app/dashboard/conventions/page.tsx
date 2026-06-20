@@ -1,18 +1,26 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { conventionService } from '@/services/convention.service';
 import { documentService } from '@/services/document.service';
-import { Convention, Document } from '@/types';
+import { Convention, Document, RoleSysteme } from '@/types';
 import { formatDate, getStatutColor } from '@/lib/utils';
 import { ChevronDown, ChevronUp, Download, Handshake } from 'lucide-react';
 import api from '@/lib/api';
 import { toArray } from '@/lib/normalize';
+import { useAuthStore } from '@/store/authStore';
 
 const TYPE_PARTENAIRES = ['Académique', 'Industriel', 'Gouvernemental', 'International', 'Autre'];
 
 export default function ConventionsPage() {
+  const { role } = useAuthStore();
+  const router = useRouter();
+  useEffect(() => {
+    if (role && role === RoleSysteme.ADMIN) router.replace('/dashboard');
+  }, [role]);
+
   const [conventions, setConventions] = useState<Convention[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [conventionDocs, setConventionDocs] = useState<Record<number, Document[]>>({});
@@ -64,6 +72,7 @@ export default function ConventionsPage() {
     <div>
       <h1 className="text-2xl font-heading font-bold text-gray-800 mb-6">Conventions et collaborations</h1>
 
+      {role === RoleSysteme.DIRECTEUR && (
       <Card className="mb-6">
         <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-3">
           <input required value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} placeholder="Titre *" className="border rounded-lg px-3 py-2" />
@@ -81,6 +90,7 @@ export default function ConventionsPage() {
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="md:col-span-3 border rounded-lg px-3 py-2" />
         </form>
       </Card>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         {conventions.map((convention) => (

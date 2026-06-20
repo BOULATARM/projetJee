@@ -322,6 +322,7 @@ export interface Mandat {
   actif: boolean;
   directeur?: MembreResponse;
   viceDirecteur?: MembreResponse;
+  chefsEquipe?: MembreResponse[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -365,6 +366,7 @@ export enum MessageType {
   GLOBAL = 'GLOBAL',
   TEAM = 'TEAM',
   DIRECT = 'DIRECT',
+  EVENT = 'EVENT',
 }
 
 export interface MessageResponse {
@@ -378,6 +380,8 @@ export interface MessageResponse {
   recipient?: MembreResponse;
   equipeId?: number;
   equipeNom?: string;
+  evenementId?: number;
+  evenementTitre?: string;
   dateEnvoi: string;
   lue: boolean;
 }

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { getStatutColor } from '@/lib/utils';
 import { membreService } from '@/services/membre.service';
 import { MembreResponse } from '@/types';
-import { Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus, Shield, Users, Star } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { RoleSysteme } from '@/types';
@@ -23,9 +23,15 @@ export default function MembresPage() {
     membreService.getAll().then(setMembres).catch(() => {});
   }, []);
 
+  const actifs = membres.filter(m =>
+    m.active !== false &&
+    m.statut !== 'RETRAITE' &&
+    m.statut !== 'ANCIEN'
+  );
+
   const filtered = search
-    ? membres.filter(m => `${m.nom} ${m.prenom}`.toLowerCase().includes(search.toLowerCase()) || m.email.includes(search))
-    : membres;
+    ? actifs.filter(m => `${m.nom} ${m.prenom}`.toLowerCase().includes(search.toLowerCase()) || m.email.includes(search))
+    : actifs;
 
   return (
     <div>
@@ -52,25 +58,43 @@ export default function MembresPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((m) => (
-          <Link key={m.id} href={`/dashboard/membres/${m.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center gap-4">
-                <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={48} />
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-800">{m.prenom} {m.nom}</p>
-                  <p className="text-sm text-gray-500">{m.email}</p>
-                  <div className="flex gap-2 mt-1">
-                    <Badge className={getStatutColor(m.statut)}>{m.statut}</Badge>
-                    {m.equipeActuelle && (
-                      <Badge className="bg-gray-100 text-gray-600">{m.equipeActuelle}</Badge>
-                    )}
+        {filtered.map((m) => {
+          const roleLabel =
+            m.roleActuel === 'DIRECTEUR'     ? { label: 'Directeur',       cls: 'bg-blue-700 text-white',   icon: <Shield size={11} /> } :
+            m.roleActuel === 'VICE_DIRECTEUR'? { label: 'Vice-Directeur',  cls: 'bg-indigo-600 text-white', icon: <Shield size={11} /> } :
+            m.roleActuel === 'CHEF_EQUIPE'   ? { label: 'Chef d\'équipe',  cls: 'bg-teal-600 text-white',   icon: <Star size={11} /> } :
+            null;
+
+          return (
+            <Link key={m.id} href={`/dashboard/membres/${m.id}`}>
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={48} />
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">{m.prenom} {m.nom}</p>
+                    <p className="text-sm text-gray-500">{m.email}</p>
+                    <div className="flex gap-1.5 mt-1.5 flex-wrap items-center">
+                      <Badge className={getStatutColor(m.statut)}>{m.statut}</Badge>
+                      {roleLabel && (
+                        <Badge className={`flex items-center gap-1 ${roleLabel.cls}`}>
+                          {roleLabel.icon} {roleLabel.label}
+                          {m.roleActuel === 'CHEF_EQUIPE' && m.equipeActuelle && (
+                            <span className="opacity-80">— {m.equipeActuelle}</span>
+                          )}
+                        </Badge>
+                      )}
+                      {m.equipeActuelle && m.roleActuel !== 'CHEF_EQUIPE' && (
+                        <Badge className="bg-gray-100 text-gray-600 flex items-center gap-1">
+                          <Users size={10} /> {m.equipeActuelle}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

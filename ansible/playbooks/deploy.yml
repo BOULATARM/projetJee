@@ -1,0 +1,31 @@
+---
+- name: Deploy LIAS application
+  hosts: tag_Project_LIAS
+  gather_facts: true
+  become: false
+
+  vars:
+    aws_region:   "{{ lookup('env', 'AWS_REGION')    | default('eu-west-3') }}"
+    ecr_registry: "{{ lookup('env', 'ECR_REGISTRY')  }}"
+    image_tag:    "{{ lookup('env', 'IMAGE_TAG')      | default('latest') }}"
+    rds_endpoint: "{{ lookup('env', 'RDS_ENDPOINT')  }}"
+    db_username:  "{{ lookup('env', 'DB_USERNAME')   | default('liasadmin') }}"
+    db_password:  "{{ lookup('env', 'DB_PASSWORD')   }}"
+    jwt_secret:   "{{ lookup('env', 'JWT_SECRET')    }}"
+    alb_dns:      "{{ lookup('env', 'ALB_DNS')       }}"
+
+  pre_tasks:
+    - name: Assert required variables are set
+      ansible.builtin.assert:
+        that:
+          - ecr_registry | length > 0
+          - rds_endpoint | length > 0
+          - db_password  | length > 0
+          - jwt_secret   | length > 0
+        fail_msg: "Missing required environment variables"
+
+  roles:
+    - role: docker
+    - role: security
+    - role: app
+    - role: nginx

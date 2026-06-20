@@ -32,6 +32,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         """)
     List<Long> findConversationPartnerIds(@Param("me") Long meId);
 
+    List<Message> findByTypeAndEvenementIdOrderByDateEnvoiAsc(MessageType type, Long evenementId);
+
     long countByRecipientIdAndLueFalseAndType(Long recipientId, MessageType type);
     void deleteByEquipeId(Long equipeId);
 }

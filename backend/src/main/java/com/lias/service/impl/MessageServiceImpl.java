@@ -20,12 +20,13 @@ public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
     private final MembreRepository membreRepository;
     private final EquipeRepository equipeRepository;
+    private final EvenementRepository evenementRepository;
     private final FileStorageService fileStorageService;
 
     @Override
     @Transactional
     public MessageDTO sendMessage(Long senderId, String contenu, MessageType type,
-                                   Long recipientId, Long equipeId, MultipartFile fichier) {
+                                   Long recipientId, Long equipeId, Long evenementId, MultipartFile fichier) {
         Membre sender = membreRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Membre introuvable"));
 
@@ -53,6 +54,12 @@ public class MessageServiceImpl implements MessageService {
             builder.equipe(equipe);
         }
 
+        if (type == MessageType.EVENT && evenementId != null) {
+            Evenement evenement = evenementRepository.findById(evenementId)
+                    .orElseThrow(() -> new RuntimeException("Événement introuvable"));
+            builder.evenement(evenement);
+        }
+
         Message saved = messageRepository.save(builder.build());
         return toDTO(saved);
     }
@@ -72,6 +79,12 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageDTO> getDirectConversation(Long meId, Long otherId) {
         return messageRepository.findDirectConversation(meId, otherId)
+                .stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public List<MessageDTO> getEventMessages(Long evenementId) {
+        return messageRepository.findByTypeAndEvenementIdOrderByDateEnvoiAsc(MessageType.EVENT, evenementId)
                 .stream().map(this::toDTO).toList();
     }
 
@@ -108,6 +121,8 @@ public class MessageServiceImpl implements MessageService {
                 .recipient(m.getRecipient() != null ? toMembreDTO(m.getRecipient()) : null)
                 .equipeId(m.getEquipe() != null ? m.getEquipe().getId() : null)
                 .equipeNom(m.getEquipe() != null ? m.getEquipe().getNom() : null)
+                .evenementId(m.getEvenement() != null ? m.getEvenement().getId() : null)
+                .evenementTitre(m.getEvenement() != null ? m.getEvenement().getTitre() : null)
                 .dateEnvoi(m.getDateEnvoi())
                 .lue(m.isLue())
                 .build();

@@ -9,6 +9,7 @@ export const messageService = {
     type: MessageType;
     recipientId?: number;
     equipeId?: number;
+    evenementId?: number;
     fichier?: File;
   }): Promise<MessageResponse> => {
     const fd = new FormData();
@@ -16,6 +17,7 @@ export const messageService = {
     fd.append('type', data.type);
     if (data.recipientId) fd.append('recipientId', String(data.recipientId));
     if (data.equipeId) fd.append('equipeId', String(data.equipeId));
+    if (data.evenementId) fd.append('evenementId', String(data.evenementId));
     if (data.fichier) fd.append('fichier', data.fichier);
     return api.post(BASE, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
   },
@@ -28,6 +30,12 @@ export const messageService = {
 
   getDirect: (otherId: number): Promise<MessageResponse[]> =>
     api.get(`${BASE}/direct/${otherId}`).then(r => r.data),
+
+  getEventMessages: (evenementId: number): Promise<MessageResponse[]> =>
+    api.get(`${BASE}/event/${evenementId}`).then(r => r.data),
+
+  getMesEvenements: (): Promise<{ id: number; titre: string; statut: string }[]> =>
+    api.get(`${BASE}/mes-evenements`).then(r => r.data),
 
   getConversations: (): Promise<MembreResponse[]> =>
     api.get(`${BASE}/conversations`).then(r => r.data),

@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface MandatService {
     Mandat getMandatActif();
-    Mandat creerMandat(Long directeurId, Long viceDirecteurId, LocalDate dateDebut, String adminEmail);
+    Mandat creerMandat(Long directeurId, Long viceDirecteurId, List<Long> chefsEquipeIds, LocalDate dateDebut, String adminEmail);
     void cloturerMandat(Long mandatId, LocalDate dateFin, String adminEmail);
     List<Mandat> getHistoriqueMandats();
 }

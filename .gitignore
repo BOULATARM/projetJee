@@ -60,5 +60,26 @@ desktop.ini
 *~
 frontend/node_modules/ 
 frontend/.next/ 
-backend/__pycache__/ 
-.env 
+backend/__pycache__/
+.env
+
+# ==========================================
+# TERRAFORM
+# ==========================================
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/tfplan
+*.tfstate
+*.tfstate.backup
+
+# ==========================================
+# SECURITY REPORTS
+# ==========================================
+*.pem
+*.key
+zap-reports/
+reports/
+nuclei-results.txt
+report_html.html
+report_json.json

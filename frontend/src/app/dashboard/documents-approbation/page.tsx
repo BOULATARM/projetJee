@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { formatDateTime } from '@/lib/utils';
@@ -7,7 +8,8 @@ import { Check, X, Clock, FileText, Download, History } from 'lucide-react';
 import api from '@/lib/api';
 import { toArray } from '@/lib/normalize';
 import { documentService } from '@/services/document.service';
-import { Document } from '@/types';
+import { Document, RoleSysteme } from '@/types';
+import { useAuthStore } from '@/store/authStore';
 
 const STATUT_STYLE: Record<string, string> = {
   PENDING:  'bg-yellow-100 text-yellow-800',
@@ -21,6 +23,15 @@ const STATUT_LABEL: Record<string, string> = {
 };
 
 export default function DocumentsApprobationPage() {
+  const { role } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (role && role !== RoleSysteme.DIRECTEUR) {
+      router.replace('/dashboard');
+    }
+  }, [role]);
+
   const [pending, setPending] = useState<Document[]>([]);
   const [historique, setHistorique] = useState<Document[]>([]);
   const [activeTab, setActiveTab] = useState<'pending' | 'historique'>('pending');

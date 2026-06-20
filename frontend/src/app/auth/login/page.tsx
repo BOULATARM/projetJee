@@ -33,7 +33,7 @@ export default function LoginPage() {
       const response = await authService.login(email, password);
       setAuth(response);
       if      (response.statut === 'RETRAITE')  router.push('/dashboard/retraite');
-      else if (response.statut === 'ASSOCIE')  router.push('/dashboard/associe');
+      else if (response.statut === 'ASSOCIE')   router.push('/dashboard/associe');
       else if (response.statut === 'DOCTORANT') router.push('/dashboard/doctorant');
       else router.push('/dashboard');
     } catch (err: unknown) {

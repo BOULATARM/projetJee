@@ -49,9 +49,10 @@ public class MandatController {
     public ResponseEntity<Mandat> creerMandat(
             @RequestParam Long directeurId,
             @RequestParam(required = false) Long viceDirecteurId,
+            @RequestParam(required = false) List<Long> chefsEquipeIds,
             @AuthenticationPrincipal UserPrincipal admin) {
         return ResponseEntity.ok(mandatService.creerMandat(
-                directeurId, viceDirecteurId, LocalDate.now(), admin.getEmail()));
+                directeurId, viceDirecteurId, chefsEquipeIds, LocalDate.now(), admin.getEmail()));
     }
 
     @PutMapping("/{id}/cloture")
