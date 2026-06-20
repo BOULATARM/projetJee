@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Bell, LogOut, Menu } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { notificationService } from '@/services/notification.service';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
@@ -17,17 +17,27 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const [notifCount, setNotifCount] = useState(0);
 
-  useEffect(() => {
-    const fetchNotifs = async () => {
-      try {
-        const notifs = await notificationService.getNonLues();
-        setNotifCount(notifs.length);
-      } catch {}
-    };
-    fetchNotifs();
-    const interval = setInterval(fetchNotifs, 30000);
-    return () => clearInterval(interval);
+  const fetchNotifCount = useCallback(async () => {
+    try {
+      const notifs = await notificationService.getNonLues();
+      setNotifCount(notifs.length);
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    fetchNotifCount();
+
+    // Poll toutes les 30 secondes
+    const interval = setInterval(fetchNotifCount, 30_000);
+
+    // Mise à jour immédiate quand une notification est lue depuis la page notifications
+    window.addEventListener('notif-lue', fetchNotifCount);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notif-lue', fetchNotifCount);
+    };
+  }, [fetchNotifCount]);
 
   const handleLogout = () => {
     logout();
@@ -61,16 +71,17 @@ export function Header({ onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
+        {/* Cloche avec badge dynamique */}
         <Link
           href="/dashboard/notifications"
           className={cn(
             'relative rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition-colors',
           )}
-          aria-label="Notifications"
+          aria-label={notifCount > 0 ? `${notifCount} notification${notifCount > 1 ? 's' : ''} non lue${notifCount > 1 ? 's' : ''}` : 'Notifications'}
         >
           <Bell size={19} />
           {notifCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white">
               {notifCount > 9 ? '9+' : notifCount}
             </span>
           )}

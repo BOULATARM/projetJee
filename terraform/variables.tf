@@ -40,7 +40,7 @@ variable "availability_zones" {
 # ── EC2 ───────────────────────────────────────────────────────────────────────
 variable "ec2_instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "t3.micro"
 }
 
 variable "key_pair_name" {
