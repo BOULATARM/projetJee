@@ -38,6 +38,17 @@ export enum TypeEvenement {
   REUNION = 'REUNION',
 }
 
+export interface Laboratoire {
+  id: number;
+  nom: string;
+  acronyme?: string;
+  description?: string;
+  adresse?: string;
+  dateCreation?: string;
+  axesDeRecherche?: string;
+  logo?: string;
+}
+
 export interface AuthResponse {
   token: string;
   type: string;

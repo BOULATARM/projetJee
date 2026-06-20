@@ -7,7 +7,7 @@ import { RoleSysteme, StatutMembre } from '@/types';
 import {
   LayoutDashboard, Users, BookOpen, Calendar, FolderOpen, Box, Handshake,
   MessageCircle, Bell, BarChart3, FileText, ClipboardCheck, Shield, Briefcase,
-  ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList, Search, ScrollText,
+  ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList, Search, ScrollText, Building2,
 } from 'lucide-react';
 
 type MenuItem = {
@@ -50,6 +50,7 @@ const allMenuItems: MenuItem[] = [
 
   // Admin/Directeur seulement
 
+  { href: '/dashboard/laboratoire', label: 'Laboratoire', icon: Building2, roles: ['DIRECTEUR'] },
   { href: '/dashboard/documents-approbation', label: 'Approbation documents', icon: ClipboardCheck, roles: ['DIRECTEUR'] },
   { href: '/dashboard/materiel', label: 'Matériel', icon: Box, roles: ['ADMIN', 'DIRECTEUR'] },
   { href: '/dashboard/demandes-adhesion', label: 'Adhésions', icon: ClipboardCheck, roles: ['DIRECTEUR'] },

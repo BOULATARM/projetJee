@@ -21,7 +21,8 @@ public class AuditAspect {
 
     @Around("execution(* com.lias.service.impl.*ServiceImpl.*(..))" +
             " && !execution(* com.lias.service.impl.AuditLogServiceImpl.*(..))" +
-            " && !execution(* com.lias.service.impl.NotificationServiceImpl.*(..))")
+            " && !execution(* com.lias.service.impl.NotificationServiceImpl.*(..))" +
+            " && !execution(* com.lias.service.impl.LaboratoireServiceImpl.*(..))")
     public Object auditServiceCall(ProceedingJoinPoint pjp) throws Throwable {
         String methodName = pjp.getSignature().getName();
 

@@ -9,8 +9,9 @@ import { membreService } from '@/services/membre.service';
 import { publicationService } from '@/services/publication.service';
 import { evenementService } from '@/services/evenement.service';
 import { equipeService } from '@/services/equipe.service';
-import { DashboardStats, MembreResponse, PublicationResponse, EvenementResponse, Equipe } from '@/types';
+import { DashboardStats, MembreResponse, PublicationResponse, EvenementResponse, Equipe, Laboratoire } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
+import { laboratoireService } from '@/services/laboratoire.service';
 
 export default function HomePage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -19,6 +20,7 @@ export default function HomePage() {
   const [evenements, setEvenements] = useState<EvenementResponse[]>([]);
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [equipesLoaded, setEquipesLoaded] = useState(false);
+  const [labo, setLabo] = useState<Laboratoire | null>(null);
 
   useEffect(() => {
     Promise.allSettled([
@@ -27,12 +29,14 @@ export default function HomePage() {
       publicationService.getAll(),
       evenementService.getAll(),
       equipeService.getAll(),
-    ]).then(([s, m, p, e, eq]) => {
+      laboratoireService.get(),
+    ]).then(([s, m, p, e, eq, l]) => {
       if (s.status === 'fulfilled') setStats(s.value);
       if (m.status === 'fulfilled') setMembres(m.value);
       if (p.status === 'fulfilled') setPublications(p.value);
       if (e.status === 'fulfilled') setEvenements(e.value);
       if (eq.status === 'fulfilled') setEquipes(eq.value);
+      if (l.status === 'fulfilled') setLabo(l.value);
       setEquipesLoaded(true);
     });
   }, []);
@@ -42,8 +46,8 @@ export default function HomePage() {
       <header className="bg-primary text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-heading font-bold">LIAS</h1>
-            <p className="text-blue-200">Laboratoire d&apos;Informatique et d&apos;Applications Scientifiques</p>
+            <h1 className="text-3xl font-heading font-bold">{labo?.acronyme ?? 'LIAS'}</h1>
+            <p className="text-blue-200">{labo?.nom ?? 'Laboratoire d\'Informatique et d\'Applications Scientifiques'}</p>
           </div>
           <nav className="flex items-center gap-3 flex-wrap">
             <Link href="/membres" className="text-white hover:text-blue-200 text-sm">Membres</Link>
@@ -64,15 +68,30 @@ export default function HomePage() {
         <section className="mb-12">
           <h2 className="text-2xl font-heading font-bold text-primary mb-6">À propos du laboratoire</h2>
           <Card className="text-gray-600 leading-relaxed">
-            <p className="mb-4">
-              Le Laboratoire d&apos;Informatique et d&apos;Applications Scientifiques (LIAS) est une unité de recherche
-              de la Faculté des Sciences Ben M&apos;Sik, Université Hassan II de Casablanca. Il regroupe des chercheurs
-              dans les domaines de l&apos;informatique et de ses applications scientifiques.
-            </p>
-            <p>
-              Nos axes de recherche couvrent l&apos;Intelligence Artificielle, les Réseaux et Systèmes Distribués,
-              ainsi que le Big Data et la Gestion des Connaissances.
-            </p>
+            {labo ? (
+              <>
+                <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-500">
+                  {labo.acronyme && (
+                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-semibold">{labo.acronyme}</span>
+                  )}
+                  {labo.dateCreation && (
+                    <span>Fondé le {new Date(labo.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  )}
+                  {labo.adresse && (
+                    <span>{labo.adresse}</span>
+                  )}
+                </div>
+                <p className="mb-4">{labo.description}</p>
+                {labo.axesDeRecherche && (
+                  <p>
+                    <span className="font-medium text-gray-700">Axes de recherche : </span>
+                    {labo.axesDeRecherche}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-gray-400">Chargement...</p>
+            )}
           </Card>
         </section>
 

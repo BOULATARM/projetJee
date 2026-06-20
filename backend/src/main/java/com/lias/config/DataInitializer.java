@@ -45,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
                 .description("Laboratoire de recherche en informatique de la Faculté des Sciences Ben M'Sik")
                 .dateCreation(LocalDate.of(2010, 9, 1))
                 .adresse("Faculté des Sciences Ben M'Sik, Casablanca, Maroc")
+                .axesDeRecherche("Intelligence Artificielle, Réseaux et Systèmes Distribués, Big Data et Gestion des Connaissances")
                 .build();
         lias = laboratoireRepository.save(lias);
 

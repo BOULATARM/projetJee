@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -8,7 +8,7 @@ import { evenementService } from '@/services/evenement.service';
 import { documentService } from '@/services/document.service';
 import { membreService } from '@/services/membre.service';
 import { Document, EvenementResponse, MembreResponse, RoleSysteme } from '@/types';
-import { ArrowLeft, CalendarDays, CheckCircle, Download, MapPin, PlusCircle, Users, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle, Download, MapPin, PlusCircle, Users, XCircle, Clock, Upload, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -43,6 +43,9 @@ export default function EvenementDetailPage() {
   const isBloque = myStatutMembre ? STATUTS_BLOQUES.includes(myStatutMembre) : false;
 
   const [annule, setAnnule] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docType, setDocType] = useState('RAPPORT');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     if (!id) return;
@@ -102,6 +105,31 @@ export default function EvenementDetailPage() {
   const handleRefuser = async (membreId: number) => {
     await api.put(`/evenements/${id}/participations/${membreId}/refuser`);
     await load();
+  };
+
+  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    setUploadingDoc(true);
+    try {
+      await documentService.upload(file, {
+        nom: file.name,
+        typeDocument: docType,
+        evenementId: Number(id),
+      });
+      documentService.getByEvenement(Number(id)).then(setDocuments);
+    } catch {
+      alert('Erreur lors de l\'upload du document.');
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteDoc = async (docId: number) => {
+    if (!confirm('Supprimer ce document ?')) return;
+    await documentService.delete(docId);
+    setDocuments(prev => prev.filter(d => d.id !== docId));
   };
 
   const handleDownload = async (doc: Document) => {
@@ -193,9 +221,42 @@ export default function EvenementDetailPage() {
 
           {/* Documents */}
           <Card>
-            <h2 className="font-semibold mb-3">Documents liés ({documents.length})</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">Documents liés ({documents.length})</h2>
+              {canManage && (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={docType}
+                    onChange={e => setDocType(e.target.value)}
+                    className="border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="RAPPORT">Rapport</option>
+                    <option value="PROGRAMME">Programme</option>
+                    <option value="ATTESTATION">Attestation</option>
+                    <option value="DEMANDE_FINANCEMENT">Demande financement</option>
+                    <option value="ADMINISTRATIF">Administratif</option>
+                    <option value="PUBLICATION">Publication / Article</option>
+                    <option value="AUTRE">Autre</option>
+                  </select>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleUploadDoc}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingDoc}
+                    className="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded text-xs hover:bg-blue-800 disabled:opacity-50"
+                  >
+                    <Upload size={13} />
+                    {uploadingDoc ? 'Upload...' : 'Ajouter'}
+                  </button>
+                </div>
+              )}
+            </div>
             {documents.length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun document</p>
+              <p className="text-sm text-gray-400">Aucun document lié à cet événement.</p>
             ) : (
               <div className="space-y-2">
                 {documents.map(doc => (
@@ -204,9 +265,16 @@ export default function EvenementDetailPage() {
                       <p className="text-sm font-medium">{doc.nom}</p>
                       <p className="text-xs text-gray-400">{doc.typeDocument} — {formatDate(doc.dateUpload)}</p>
                     </div>
-                    <button onClick={() => handleDownload(doc)} className="p-1 text-primary hover:bg-primary/10 rounded">
-                      <Download size={16} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => handleDownload(doc)} className="p-1 text-primary hover:bg-primary/10 rounded" title="Télécharger">
+                        <Download size={16} />
+                      </button>
+                      {canManage && (
+                        <button onClick={() => handleDeleteDoc(doc.id)} className="p-1 text-red-500 hover:bg-red-50 rounded" title="Supprimer">
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

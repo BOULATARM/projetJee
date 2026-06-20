@@ -33,6 +33,9 @@ public class Laboratoire {
 
     private String adresse;
 
+    @Column(columnDefinition = "TEXT")
+    private String axesDeRecherche;
+
     @OneToMany(mappedBy = "laboratoire", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("laboratoire")
     @Builder.Default

@@ -36,8 +36,20 @@ public class MembreController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MembreDetailDTO> getMembreById(@PathVariable Long id) {
-        return ResponseEntity.ok(membreService.getMembreById(id));
+    public ResponseEntity<MembreDetailDTO> getMembreById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        MembreDetailDTO dto = membreService.getMembreById(id);
+        boolean canSeeBirthdate = currentUser != null && (
+                currentUser.getMembreId().equals(id) ||
+                currentUser.getAuthorities().stream().anyMatch(a ->
+                        a.getAuthority().equals("ROLE_ADMIN") ||
+                        a.getAuthority().equals("ROLE_DIRECTEUR"))
+        );
+        if (!canSeeBirthdate) {
+            dto.setDateNaissance(null);
+        }
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/search")
