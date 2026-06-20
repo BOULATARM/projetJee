@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+// Variable fonts : "100 900" indique la plage de graisses supportée
+const geist = localFont({
+  src: [{ path: "./fonts/GeistVF.woff", weight: "100 900", style: "normal" }],
+  variable: "--font-geist",
   display: "swap",
-  preload: false,
+  preload: true,
+  fallback: ["system-ui", "sans-serif"],
 });
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
+const geistMono = localFont({
+  src: [{ path: "./fonts/GeistMonoVF.woff", weight: "100 900", style: "normal" }],
+  variable: "--font-geist-mono",
   display: "swap",
   preload: false,
+  fallback: ["ui-monospace", "monospace"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${inter.variable} ${montserrat.variable} font-sans antialiased`}>
+      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

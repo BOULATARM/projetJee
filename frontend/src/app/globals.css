@@ -2,21 +2,193 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Tokens CSS (identiques aux valeurs Tailwind pour usages inline) ─── */
 :root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
-  --primary: #1e3a5f;
-  --primary-light: #3b82f6;
-  --accent: #16a34a;
+  --color-primary:       #0F766E;
+  --color-primary-hover: #0D9488;
+  --color-primary-light: #F0FDFA;
+  --color-accent:        #0EA5E9;
+  --color-surface:       #FFFFFF;
+  --color-background:    #FAFAF9;
+  --color-text:          #1C1917;
+  --color-text-muted:    #57534E;
+  --color-border:        #E7E5E4;
+  --color-border-strong: #D6D3D1;
+  --color-success:       #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-warning:       #EA580C;
+  --color-warning-light: #FFF7ED;
+  --color-danger:        #DC2626;
+  --color-danger-light:  #FEF2F2;
+
+  --radius-card:   1rem;
+  --radius-button: 0.625rem;
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 4px 12px 0 rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.05);
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+/* ─── Base ─── */
+@layer base {
+  *, *::before, *::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-geist), system-ui, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 { @apply text-2xl font-bold leading-tight tracking-tight; }
+  h2 { @apply text-lg font-semibold leading-snug; }
+  h3 { @apply text-[0.9375rem] font-medium leading-snug; }
+
+  /* Inputs cohérents dans tout le projet */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    @apply w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-stone-800 outline-none
+           placeholder:text-stone-400
+           focus:border-primary focus:ring-2 focus:ring-primary/10
+           disabled:cursor-not-allowed disabled:bg-stone-50 disabled:text-stone-400
+           transition-colors;
+  }
+
+  textarea {
+    @apply resize-none;
+  }
 }
 
+/* ─── Utilitaires personnalisés ─── */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Anneaux de focus accessibles */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1;
+  }
+
+  /* Truncate sur plusieurs lignes */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/*
+ * Scrollbar utilities — hors @layer pour garantir leur inclusion dans le bundle.
+ * Les pseudo-éléments ::-webkit-scrollbar à l'intérieur d'un @layer Tailwind
+ * peuvent être strippés par PostCSS/Turbopack. On les écrit ici directement.
+ */
+
+/* Scrollbar fine et discrète (main, modales, zones de contenu) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d6d3d1 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d6d3d1;
+  border-radius: 10px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a29e;
+}
+
+/* Scrollbar complètement masquée (sidebar, drawers) — scroll fonctionnel */
+.scrollbar-hide {
+  scrollbar-width: none;   /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;           /* Chrome, Safari, Edge */
+}
+
+/* ─── Composants globaux ─── */
+@layer components {
+  /* Bouton primaire de base (utilisable sans composant React) */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-button bg-primary px-4 py-2
+           text-sm font-medium text-white
+           hover:bg-primary-hover active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-50
+           transition-all duration-150 focus-ring;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-button border border-primary/20
+           bg-primary-light px-4 py-2 text-sm font-medium text-primary
+           hover:bg-primary-100 active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-50
+           transition-all duration-150 focus-ring;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-button px-4 py-2
+           text-sm font-medium text-stone-600
+           hover:bg-stone-100 hover:text-stone-800 active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-50
+           transition-all duration-150 focus-ring;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-button bg-danger px-4 py-2
+           text-sm font-medium text-white
+           hover:bg-danger/90 active:scale-[0.98]
+           disabled:cursor-not-allowed disabled:opacity-50
+           transition-all duration-150 focus-ring;
+  }
+
+  /* Label de formulaire standard */
+  .form-label {
+    @apply mb-1 block text-xs font-medium text-stone-600;
+  }
+
+  /* Message d'erreur de formulaire */
+  .form-error {
+    @apply mt-1 text-xs text-danger;
+  }
+
+  /* Conteneur de page dashboard */
+  .page-container {
+    @apply mx-auto max-w-6xl animate-fade-in;
+  }
+
+  /* En-tête de section avec titre + action */
+  .section-header {
+    @apply mb-6 flex flex-wrap items-center justify-between gap-3;
   }
 }

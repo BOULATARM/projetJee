@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface AvatarProps {
   photo?: string | null;
@@ -24,16 +25,22 @@ export function Avatar({ photo, nom, prenom, size = 40, className = '' }: Avatar
       : `${PHOTO_BASE}/uploads/${photo.replace(/^\/?(uploads\/)?/, '')}`
     : null;
 
-  const style = { width: size, height: size, minWidth: size, fontSize: size * 0.35 };
+  const style = {
+    width: size,
+    height: size,
+    minWidth: size,
+    fontSize: Math.max(10, Math.round(size * 0.36)),
+  };
 
   if (src && !error) {
     return (
       <img
         src={src}
-        alt={`${prenom} ${nom}`}
+        alt={`${prenom ?? ''} ${nom ?? ''}`.trim()}
         style={style}
-        className={`rounded-full object-cover ${className}`}
+        className={cn('rounded-full object-cover ring-2 ring-white', className)}
         onError={() => setError(true)}
+        loading="lazy"
       />
     );
   }
@@ -41,7 +48,11 @@ export function Avatar({ photo, nom, prenom, size = 40, className = '' }: Avatar
   return (
     <div
       style={style}
-      className={`rounded-full bg-primary flex items-center justify-center text-white font-bold select-none ${className}`}
+      className={cn(
+        'rounded-full flex items-center justify-center select-none font-semibold',
+        'bg-primary-100 text-primary-800 ring-2 ring-white',
+        className,
+      )}
     >
       {initials}
     </div>
