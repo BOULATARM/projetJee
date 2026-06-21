@@ -36,10 +36,10 @@ export default function ReunionDetailPage() {
       setCompteRendu(res.data.compteRendu || '');
       const partRes = await api.get(`/reunions/${id}/presences`).catch(() => ({ data: [] }));
       // Map flat DTO back to nested structure used by the UI
-      setParticipants(toArray(partRes.data).map((p: { id: number; membreId: number; prenom: string; nom: string; photo?: string; present: boolean }) => ({
+      setParticipants((toArray(partRes.data) as { id: number; membreId: number; prenom: string; nom: string; photo?: string; present: boolean }[]).map((p) => ({
         id: p.id,
         present: p.present,
-        membre: { id: p.membreId, prenom: p.prenom, nom: p.nom, photo: p.photo, email: '', statut: 'ACTIF' as const, active: true },
+        membre: { id: p.membreId, prenom: p.prenom, nom: p.nom, photo: p.photo } as MembreResponse,
       })));
       // Load documents linked to this reunion
       const docRes = await api.get(`/documents/reunion/${id}`).catch(() => ({ data: [] }));
@@ -140,9 +140,9 @@ export default function ReunionDetailPage() {
                 <MapPin size={14} /> {reunion.lieu}
               </p>
             )}
-            {(reunion.createur || reunion.creePar) && (
+            {reunion.creePar && (
               <p className="text-xs text-gray-400 mt-3">
-                Créée par {((reunion.createur || reunion.creePar) as MembreResponse)?.prenom} {((reunion.createur || reunion.creePar) as MembreResponse)?.nom}
+                Créée par {reunion.creePar?.prenom} {reunion.creePar?.nom}
               </p>
             )}
 
