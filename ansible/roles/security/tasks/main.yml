@@ -73,7 +73,7 @@
 - name: Set SSH hardening config
   ansible.builtin.blockinfile:
     path: /etc/ssh/sshd_config
-    marker: "# {mark} ANSIBLE MANAGED – LIAS security"
+    marker: "# {mark} ANSIBLE MANAGED - LIAS security"
     block: |
       PermitRootLogin no
       PasswordAuthentication no
