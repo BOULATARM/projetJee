@@ -9,6 +9,10 @@ resource "aws_ecr_repository" "backend" {
   encryption_configuration {
     encryption_type = "AES256"
   }
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 resource "aws_ecr_repository" "frontend" {
@@ -21,6 +25,10 @@ resource "aws_ecr_repository" "frontend" {
 
   encryption_configuration {
     encryption_type = "AES256"
+  }
+
+  lifecycle {
+    ignore_changes = all
   }
 }
 
