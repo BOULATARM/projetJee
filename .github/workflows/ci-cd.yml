@@ -278,11 +278,13 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      # Remove ECR repo resources from state (they exist on AWS but are now managed as locals)
-      - name: Remove ECR repos from Terraform state
+      # Remove ECR resources from state (managed as locals to avoid ECR API permissions)
+      - name: Remove ECR resources from Terraform state
         run: |
-          terraform state rm aws_ecr_repository.backend  || true
-          terraform state rm aws_ecr_repository.frontend || true
+          terraform state rm aws_ecr_repository.backend       || true
+          terraform state rm aws_ecr_repository.frontend      || true
+          terraform state rm aws_ecr_lifecycle_policy.backend  || true
+          terraform state rm aws_ecr_lifecycle_policy.frontend || true
 
       - name: Terraform Plan
         run: |
