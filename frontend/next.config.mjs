@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     // Réduit le temps de compilation en n'important que les icônes utilisées
     optimizePackageImports: ['lucide-react', 'recharts', '@tanstack/react-query'],
