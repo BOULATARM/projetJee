@@ -355,6 +355,7 @@ jobs:
           JWT_SECRET:    ${{ secrets.JWT_SECRET }}
           ALB_DNS:       ${{ needs.terraform.outputs.alb_dns }}
           ANSIBLE_HOST_KEY_CHECKING: "False"
+          ANSIBLE_CALLBACKS_ENABLED: ""
         run: |
           ANSIBLE_CONFIG=ansible/ansible.cfg \
           ANSIBLE_ROLES_PATH=ansible/roles \
