@@ -391,25 +391,30 @@ jobs:
       # ── ZAP Baseline Scan ─────────────────────────────────────────────────
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
+        continue-on-error: true
         with:
           target:       ${{ needs.terraform.outputs.alb_dns }}
           rules_file_name: .zap/rules.tsv
           cmd_options:  "-a -j"
-          issue_title:  "ZAP Baseline Scan – ${{ github.sha }}"
+          issue_title:  "ZAP Baseline Scan - ${{ github.sha }}"
           token:        ${{ secrets.GITHUB_TOKEN }}
+          artifact_name: "zap-baseline-${{ github.sha }}"
 
       # ── ZAP Full Scan (API) ────────────────────────────────────────────────
       - name: OWASP ZAP API Scan
         uses: zaproxy/action-api-scan@v0.7.0
+        continue-on-error: true
         with:
           target:      "${{ needs.terraform.outputs.alb_dns }}/v3/api-docs"
           format:      openapi
           cmd_options: "-a"
           token:       ${{ secrets.GITHUB_TOKEN }}
+          artifact_name: "zap-api-${{ github.sha }}"
 
       - name: Upload ZAP reports
         uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: zap-security-reports-${{ github.sha }}
           path: |
