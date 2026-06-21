@@ -62,8 +62,3 @@
   retries: 15
   delay: 10
   until: health.status == 200
-
-handlers:
-  - name: Restart app
-    ansible.builtin.shell: docker compose -f /opt/lias/docker-compose.yml up -d --force-recreate
-    become: true

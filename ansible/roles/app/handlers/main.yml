@@ -1,0 +1,4 @@
+---
+- name: Restart app
+  ansible.builtin.shell: docker compose -f /opt/lias/docker-compose.yml up -d --force-recreate
+  become: true

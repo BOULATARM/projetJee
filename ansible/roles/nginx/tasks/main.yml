@@ -21,10 +21,3 @@
     state: started
     enabled: true
   become: true
-
-handlers:
-  - name: Reload nginx
-    ansible.builtin.systemd:
-      name: nginx
-      state: reloaded
-    become: true
