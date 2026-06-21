@@ -88,7 +88,7 @@ export default function RapportAnnuelPage() {
       <div className="space-y-4">
         {rapports.map(rapport => (
           <div key={rapport.id}>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => openDetail(rapport)}>
+            <div className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => openDetail(rapport)}><Card>
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold text-gray-800 text-lg">Rapport {rapport.annee}</h3>
@@ -131,7 +131,7 @@ export default function RapportAnnuelPage() {
                   <Download size={15} /> Exporter PDF
                 </button>
               </div>
-            </Card>
+            </Card></div>
 
             {/* Détail déroulable */}
             {selected?.id === rapport.id && (
