@@ -278,6 +278,15 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      # Apply IAM policy first so ecr:DescribeRepositories is available for the full plan
+      - name: Terraform Apply IAM policy (bootstrap)
+        run: |
+          terraform apply -auto-approve \
+            -target=aws_iam_role_policy.github_deploy_policy \
+            -var="key_pair_name=${{ secrets.AWS_KEY_PAIR_NAME }}" \
+            -var="my_ip=${{ secrets.ADMIN_IP }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}"
+
       - name: Terraform Plan
         run: |
           terraform plan \
