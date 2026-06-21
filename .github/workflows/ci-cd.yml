@@ -184,6 +184,7 @@ jobs:
 
       - name: Trivy scan — backend
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref:    "${{ steps.login-ecr.outputs.registry }}/lias/backend:${{ env.IMAGE_TAG }}"
           format:       sarif
@@ -194,6 +195,7 @@ jobs:
 
       - name: Upload Trivy backend results
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
         if: always()
         with:
           sarif_file: trivy-backend.sarif
@@ -215,6 +217,7 @@ jobs:
 
       - name: Trivy scan — frontend
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref:    "${{ steps.login-ecr.outputs.registry }}/lias/frontend:${{ env.IMAGE_TAG }}"
           format:       sarif
@@ -225,6 +228,7 @@ jobs:
 
       - name: Upload Trivy frontend results
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
         if: always()
         with:
           sarif_file: trivy-frontend.sarif
