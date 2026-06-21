@@ -356,6 +356,8 @@ jobs:
           ALB_DNS:       ${{ needs.terraform.outputs.alb_dns }}
           ANSIBLE_HOST_KEY_CHECKING: "False"
         run: |
+          ANSIBLE_CONFIG=ansible/ansible.cfg \
+          ANSIBLE_ROLES_PATH=ansible/roles \
           ansible-playbook ansible/playbooks/deploy.yml \
             -i ansible/inventory/aws_ec2.yml \
             --private-key ~/.ssh/lias-keypair.pem
