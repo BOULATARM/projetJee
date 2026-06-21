@@ -340,6 +340,7 @@ jobs:
 
       - name: Write SSH private key
         run: |
+          mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/lias-keypair.pem
           chmod 600 ~/.ssh/lias-keypair.pem
 
