@@ -336,7 +336,7 @@ jobs:
       - name: Install Ansible + AWS collections
         run: |
           pip install ansible boto3 botocore
-          ansible-galaxy collection install amazon.aws community.docker ansible.posix
+          ansible-galaxy collection install amazon.aws community.docker ansible.posix "community.general:<=9.5.0"
 
       - name: Write SSH private key
         run: |
@@ -355,7 +355,6 @@ jobs:
           JWT_SECRET:    ${{ secrets.JWT_SECRET }}
           ALB_DNS:       ${{ needs.terraform.outputs.alb_dns }}
           ANSIBLE_HOST_KEY_CHECKING: "False"
-          ANSIBLE_CALLBACKS_ENABLED: ""
         run: |
           ANSIBLE_CONFIG=ansible/ansible.cfg \
           ANSIBLE_ROLES_PATH=ansible/roles \
