@@ -368,7 +368,7 @@ jobs:
   pentest-dast:
     name: "Security — DAST Pentest (OWASP ZAP)"
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: [terraform, deploy]
     if: github.ref == 'refs/heads/main'
     permissions:
       issues: write
