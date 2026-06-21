@@ -16,7 +16,7 @@ import {
 
 interface Profil {
   id: number; nom: string; prenom: string; email: string; statut: string;
-  biographie?: string; centresInteret?: string; dateEmbauche?: string;
+  photo?: string; biographie?: string; centresInteret?: string; dateEmbauche?: string;
   etablissementOrigine?: string; dateNaissance?: string;
 }
 interface Publication {

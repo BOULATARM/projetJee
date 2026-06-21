@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 
 interface Profil {
   id: number; nom: string; prenom: string; email: string; statut: string;
-  biographie?: string; etablissementOrigine?: string; dateEmbauche?: string;
+  photo?: string; biographie?: string; etablissementOrigine?: string; dateEmbauche?: string;
 }
 interface Publication {
   id: number; titre: string; annee: number; typePub: string;
