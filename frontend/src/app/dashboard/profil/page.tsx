@@ -94,7 +94,7 @@ export default function ProfilPage() {
 
       // 4. Sync store → header updates immediately
       setAuth({
-        token: token!, membreId: membreId!, email: updated.email ?? authEmail ?? '',
+        token: token!, type: 'Bearer', membreId: membreId!, email: updated.email ?? authEmail ?? '',
         role: role!, statut: authStatut ?? undefined,
         nom: updated.nom ?? authNom ?? '', prenom: updated.prenom ?? authPrenom ?? '',
         photo: updated.photo ?? undefined,
