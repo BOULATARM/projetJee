@@ -1,40 +1,13 @@
-resource "aws_ecr_repository" "backend" {
-  name                 = "${var.app_name}/backend"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  encryption_configuration {
-    encryption_type = "AES256"
-  }
-
-  lifecycle {
-    ignore_changes = all
-  }
+# ECR repositories already exist (created during initial bootstrap).
+# Managed as locals to avoid requiring ecr:DescribeRepositories on the deploy role.
+locals {
+  ecr_backend_url  = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.app_name}/backend"
+  ecr_frontend_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.app_name}/frontend"
 }
 
-resource "aws_ecr_repository" "frontend" {
-  name                 = "${var.app_name}/frontend"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  encryption_configuration {
-    encryption_type = "AES256"
-  }
-
-  lifecycle {
-    ignore_changes = all
-  }
-}
-
-# Keep only the last 10 images to control costs
+# Keep lifecycle policies managed by Terraform
 resource "aws_ecr_lifecycle_policy" "backend" {
-  repository = aws_ecr_repository.backend.name
+  repository = "${var.app_name}/backend"
   policy = jsonencode({
     rules = [{
       rulePriority = 1
@@ -50,7 +23,7 @@ resource "aws_ecr_lifecycle_policy" "backend" {
 }
 
 resource "aws_ecr_lifecycle_policy" "frontend" {
-  repository = aws_ecr_repository.frontend.name
+  repository = "${var.app_name}/frontend"
   policy = jsonencode({
     rules = [{
       rulePriority = 1

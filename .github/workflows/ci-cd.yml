@@ -278,14 +278,11 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      # Apply IAM policy first so ecr:DescribeRepositories is available for the full plan
-      - name: Terraform Apply IAM policy (bootstrap)
+      # Remove ECR repo resources from state (they exist on AWS but are now managed as locals)
+      - name: Remove ECR repos from Terraform state
         run: |
-          terraform apply -auto-approve \
-            -target=aws_iam_role_policy.github_deploy_policy \
-            -var="key_pair_name=${{ secrets.AWS_KEY_PAIR_NAME }}" \
-            -var="my_ip=${{ secrets.ADMIN_IP }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}"
+          terraform state rm aws_ecr_repository.backend  || true
+          terraform state rm aws_ecr_repository.frontend || true
 
       - name: Terraform Plan
         run: |

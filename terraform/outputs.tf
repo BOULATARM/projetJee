@@ -10,12 +10,12 @@ output "app_public_ip" {
 
 output "ecr_backend_url" {
   description = "ECR repository URL for the backend image"
-  value       = aws_ecr_repository.backend.repository_url
+  value       = local.ecr_backend_url
 }
 
 output "ecr_frontend_url" {
   description = "ECR repository URL for the frontend image"
-  value       = aws_ecr_repository.frontend.repository_url
+  value       = local.ecr_frontend_url
 }
 
 output "rds_endpoint" {
