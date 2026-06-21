@@ -75,7 +75,7 @@ export default function DoctorantDashboard() {
       modifier:     loadProfil,
       publications: async () => {
         const { data } = await api.get('/publications');
-        setPublications(toArray(data).filter((p: Publication) =>
+        setPublications((toArray(data) as Publication[]).filter((p) =>
           p.auteurs?.some(a => a.nom === nom && a.prenom === prenom)));
       },
       ajouter: async () => {},
