@@ -39,7 +39,7 @@ export default function ReunionDetailPage() {
       setParticipants(toArray(partRes.data).map((p: { id: number; membreId: number; prenom: string; nom: string; photo?: string; present: boolean }) => ({
         id: p.id,
         present: p.present,
-        membre: { id: p.membreId, prenom: p.prenom, nom: p.nom, photo: p.photo },
+        membre: { id: p.membreId, prenom: p.prenom, nom: p.nom, photo: p.photo, email: '', statut: 'ACTIF' as const, active: true },
       })));
       // Load documents linked to this reunion
       const docRes = await api.get(`/documents/reunion/${id}`).catch(() => ({ data: [] }));
