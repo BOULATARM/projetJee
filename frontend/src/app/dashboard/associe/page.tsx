@@ -130,7 +130,7 @@ export default function AssocieDashboard() {
       },
       publications: async () => {
         const { data } = await api.get('/publications');
-        setPublications(toArray(data).filter((p: Publication) =>
+        setPublications((toArray(data) as Publication[]).filter((p) =>
           p.auteurs?.some((a: { nom: string; prenom: string }) =>
             a.nom === nom && a.prenom === prenom)));
       },
