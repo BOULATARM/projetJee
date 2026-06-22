@@ -1,4 +1,9 @@
 ---
+- name: Restore system urllib3 for awscli compatibility
+  ansible.builtin.shell: pip3 install "urllib3<2" "requests<2.29" --ignore-installed -q
+  become: true
+  changed_when: false
+
 - name: Authenticate to Amazon ECR
   ansible.builtin.shell: |
     aws ecr get-login-password --region {{ aws_region }} | \

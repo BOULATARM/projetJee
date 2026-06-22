@@ -11,8 +11,8 @@
   ansible.builtin.pip:
     name: docker
     state: present
-    extra_args: "--ignore-installed"
-  become: true
+    extra_args: "--user"
+  become: false
 
 - name: Start and enable Docker
   ansible.builtin.systemd:
