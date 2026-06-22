@@ -209,6 +209,8 @@ jobs:
           file: docker/frontend/Dockerfile
           push: false
           load: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://lias-alb-1877599950.eu-west-3.elb.amazonaws.com
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/lias/frontend:${{ env.IMAGE_TAG }}
             ${{ steps.login-ecr.outputs.registry }}/lias/frontend:latest
