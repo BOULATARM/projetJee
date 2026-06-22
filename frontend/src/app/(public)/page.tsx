@@ -148,7 +148,7 @@ export default function HomePage() {
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium text-gray-900">{p.titre}</p>
                     <a
-                      href={`http://localhost:8080/api/v1/publications/${p.id}/download`}
+                      href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/publications/${p.id}/download`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="shrink-0 flex items-center gap-1 text-xs text-red-600 hover:text-red-800 border border-red-200 rounded px-2 py-0.5 hover:bg-red-50"
