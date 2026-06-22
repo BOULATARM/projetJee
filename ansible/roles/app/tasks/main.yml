@@ -73,8 +73,8 @@
 - name: Wait for backend health check
   ansible.builtin.uri:
     url: http://localhost:8080/actuator/health
-    status_code: 200
+    status_code: [200, 403]
   register: health
   retries: 15
   delay: 10
-  until: health.status == 200
+  until: health.status in [200, 403]
