@@ -349,9 +349,9 @@ jobs:
         run: |
           RUNNER_IP=$(curl -s https://checkip.amazonaws.com)
           echo "runner_ip=${RUNNER_IP}" >> $GITHUB_OUTPUT
-          SG_ID=$(aws ec2 describe-security-groups --region ${{ env.AWS_REGION }} \
-            --filters "Name=tag:Project,Values=LIAS" \
-            --query "SecurityGroups[0].GroupId" --output text)
+          SG_ID=$(aws ec2 describe-instances --region ${{ env.AWS_REGION }} \
+            --filters "Name=tag:Project,Values=LIAS" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].SecurityGroups[0].GroupId" --output text)
           echo "sg_id=${SG_ID}" >> $GITHUB_OUTPUT
           aws ec2 authorize-security-group-ingress \
             --region ${{ env.AWS_REGION }} \
