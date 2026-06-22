@@ -1,6 +1,14 @@
 ---
+- name: Install boto3 for ECR authentication
+  ansible.builtin.pip:
+    name: boto3
+    state: present
+    extra_args: "--user"
+  become: false
+
 - name: Authenticate to Amazon ECR
   ansible.builtin.shell: |
+    export PYTHONPATH="$HOME/.local/lib/python3.9/site-packages:$PYTHONPATH"
     python3 -c "
     import boto3, subprocess, base64, sys
     ecr = boto3.client('ecr', region_name='{{ aws_region }}')
