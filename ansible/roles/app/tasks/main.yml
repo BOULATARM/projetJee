@@ -1,13 +1,16 @@
 ---
-- name: Restore system urllib3 for awscli compatibility
-  ansible.builtin.shell: pip3 install "urllib3<2" "requests<2.29" --ignore-installed -q
-  become: true
-  changed_when: false
-
 - name: Authenticate to Amazon ECR
   ansible.builtin.shell: |
-    aws ecr get-login-password --region {{ aws_region }} | \
-    docker login --username AWS --password-stdin {{ ecr_registry }}
+    python3 -c "
+    import boto3, subprocess, base64, sys
+    ecr = boto3.client('ecr', region_name='{{ aws_region }}')
+    token = ecr.get_authorization_token()
+    encoded = token['authorizationData'][0]['authorizationToken']
+    _, pwd = base64.b64decode(encoded).decode().split(':', 1)
+    r = subprocess.run(['docker', 'login', '--username', 'AWS', '--password-stdin', '{{ ecr_registry }}'],
+                       input=pwd, capture_output=True, text=True)
+    print(r.stdout); print(r.stderr, file=sys.stderr); sys.exit(r.returncode)
+    "
   become: true
   changed_when: false
 
