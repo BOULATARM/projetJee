@@ -1,6 +1,6 @@
 ---
 - name: Deploy LIAS application
-  hosts: tag_Project_LIAS
+  hosts: all
   gather_facts: true
   become: false
 
