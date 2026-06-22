@@ -24,7 +24,7 @@ services:
     container_name: lias-frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: "http://{{ alb_dns }}"
+      NEXT_PUBLIC_API_URL: "{{ alb_dns }}"
     ports:
       - "3000:3000"
     depends_on:
