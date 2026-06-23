@@ -5,8 +5,11 @@ import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { equipeService } from '@/services/equipe.service';
 import { Equipe } from '@/types';
+import { PublicHeader } from '@/components/layout/PublicHeader';
+import { useT } from '@/hooks/useT';
 
 export default function PublicEquipesPage() {
+  const t = useT();
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,19 +18,14 @@ export default function PublicEquipesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-primary text-white py-6 px-4">
-        <div className="max-w-7xl mx-auto">
-          <Link href="/" className="text-blue-200 hover:text-white text-sm">← Retour à l&apos;accueil</Link>
-          <h1 className="text-3xl font-heading font-bold mt-2">Nos Équipes</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-stone-900">
+      <PublicHeader title={t.pub.equipesTitle} />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {loading ? (
-          <p className="text-gray-500">Chargement...</p>
+          <p className="text-gray-500 dark:text-stone-400">{t.pub.loading}</p>
         ) : equipes.length === 0 ? (
-          <p className="text-gray-500">Aucune équipe disponible.</p>
+          <p className="text-gray-500 dark:text-stone-400">{t.pub.noEquipes}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {equipes.map((eq) => (
@@ -38,13 +36,13 @@ export default function PublicEquipesPage() {
                     <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">{eq.axeRecherche}</p>
                   )}
                   {eq.description && (
-                    <p className="text-sm text-gray-600 flex-1 line-clamp-3">{eq.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-stone-400 flex-1 line-clamp-3">{eq.description}</p>
                   )}
                   {eq.chefEquipe && (
-                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-stone-700">
                       <Avatar photo={eq.chefEquipe.photo} nom={eq.chefEquipe.nom} prenom={eq.chefEquipe.prenom} size={32} />
                       <div>
-                        <p className="text-xs text-gray-500">Chef d&apos;équipe</p>
+                        <p className="text-xs text-gray-500 dark:text-stone-400">{t.pub.teamLeaderSmall}</p>
                         <p className="text-sm font-medium">{eq.chefEquipe.prenom} {eq.chefEquipe.nom}</p>
                       </div>
                     </div>
@@ -57,7 +55,7 @@ export default function PublicEquipesPage() {
       </main>
 
       <footer className="bg-primary text-white text-center py-6 mt-12">
-        <p className="text-sm">© 2025 LIAS - Faculté des Sciences Ben M&apos;Sik, Casablanca, Maroc</p>
+        <p className="text-sm">{t.pub.footer}</p>
       </footer>
     </div>
   );

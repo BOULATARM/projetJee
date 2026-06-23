@@ -13,6 +13,7 @@ import { DashboardStats, EvenementResponse, PublicationResponse, RoleSysteme, St
 import { Users, BookOpen, Calendar, GraduationCap, ArrowRight, Shield, FileText, ClipboardCheck, Briefcase, Bell, History, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import api from '@/lib/api';
 import { toArray } from '@/lib/normalize';
+import { useT } from '@/hooks/useT';
 
 // ─── Composant Participation Événements (DOCTORANT / ASSOCIÉ) ───────────────
 interface ParticipationInfo {
@@ -24,10 +25,10 @@ function EvenementsParticipation({ evenements, membreId, statutMembre }: {
   membreId: number | null;
   statutMembre: string;
 }) {
+  const t = useT();
   const [participations, setParticipations] = useState<Record<number, ParticipationInfo>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
 
-  // Initialiser les participations à partir des données déjà dans les événements
   useEffect(() => {
     const map: Record<number, ParticipationInfo> = {};
     evenements.forEach(evt => {
@@ -46,7 +47,7 @@ function EvenementsParticipation({ evenements, membreId, statutMembre }: {
       const res = await api.post(`/evenements/${evtId}/participer`);
       setParticipations(prev => ({ ...prev, [evtId]: { statut: res.data.statut } }));
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Erreur lors de la demande.');
+      alert(err?.response?.data?.message || t.dash.requestError);
     } finally {
       setLoading(prev => ({ ...prev, [evtId]: false }));
     }
@@ -59,17 +60,17 @@ function EvenementsParticipation({ evenements, membreId, statutMembre }: {
     if (!p) return null;
     if (p.statut === 'CONFIRME') return (
       <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-        <CheckCircle size={13} /> Confirmé
+        <CheckCircle size={13} /> {t.dash.confirmed}
       </span>
     );
     if (p.statut === 'EN_ATTENTE') return (
       <span className="flex items-center gap-1 text-xs text-yellow-600 font-medium">
-        <AlertCircle size={13} /> En attente
+        <AlertCircle size={13} /> {t.dash.pending}
       </span>
     );
     return (
       <span className="flex items-center gap-1 text-xs text-red-500 font-medium">
-        <XCircle size={13} /> Refusé
+        <XCircle size={13} /> {t.dash.refused}
       </span>
     );
   };
@@ -78,30 +79,30 @@ function EvenementsParticipation({ evenements, membreId, statutMembre }: {
     <Card>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-heading font-semibold flex items-center gap-2">
-          <Calendar size={16} className="text-purple-500" /> Événements disponibles
+          <Calendar size={16} className="text-purple-500" /> {t.dash.availableEvents}
         </h2>
         <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">
-          Voir tout <ArrowRight size={14} />
+          {t.dash.viewAll} <ArrowRight size={14} />
         </Link>
       </div>
 
-      {statutMembre === 'ASSOCIE' || statutMembre === 'DOCTORANT' ? (
+      {(statutMembre === 'ASSOCIE' || statutMembre === 'DOCTORANT') ? (
         <div className="flex items-center gap-2 text-xs text-yellow-700 bg-yellow-50 px-3 py-2 rounded-lg mb-3">
-          <AlertCircle size={13} /> Votre participation nécessite la confirmation du directeur du laboratoire.
+          <AlertCircle size={13} /> {t.dash.needsConfirmation}
         </div>
       ) : null}
 
       {disponibles.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4">Aucun événement disponible.</p>
+        <p className="text-sm text-gray-400 text-center py-4">{t.dash.noEventsAvail}</p>
       ) : (
         <div className="space-y-2">
           {disponibles.slice(0, 5).map(e => {
             const myPart = participations[e.id];
             return (
-              <div key={e.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={e.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-stone-800 rounded-lg">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-800 truncate">{e.titre}</p>
-                  <p className="text-xs text-gray-500">{formatDate(e.dateDebut)} {e.lieu ? `— ${e.lieu}` : ''}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-stone-100 truncate">{e.titre}</p>
+                  <p className="text-xs text-gray-500 dark:text-stone-400">{formatDate(e.dateDebut)} {e.lieu ? `— ${e.lieu}` : ''}</p>
                 </div>
                 <div className="ml-3 shrink-0">
                   {myPart ? statutBadge(e.id) : (
@@ -110,7 +111,7 @@ function EvenementsParticipation({ evenements, membreId, statutMembre }: {
                       disabled={loading[e.id]}
                       className="bg-primary text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50 whitespace-nowrap"
                     >
-                      {loading[e.id] ? '...' : 'Participer'}
+                      {loading[e.id] ? '...' : t.dash.participate}
                     </button>
                   )}
                 </div>
@@ -129,6 +130,7 @@ function DashboardAdmin({ stats, evenements, publications }: {
   evenements: EvenementResponse[];
   publications: PublicationResponse[];
 }) {
+  const t = useT();
   const [pendingCount, setPendingCount] = useState(0);
   useEffect(() => {
     api.get('/demandes-adhesion').then(r => {
@@ -138,13 +140,13 @@ function DashboardAdmin({ stats, evenements, publications }: {
   }, []);
 
   const cards = [
-    { label: 'Membres actifs', value: stats?.nbMembres || 0, icon: Users, color: 'bg-blue-500', href: '/dashboard/membres' },
-    { label: 'Publications', value: stats?.nbPublications || 0, icon: BookOpen, color: 'bg-green-500', href: '/dashboard/publications' },
-    { label: 'Événements', value: stats?.nbEvenements || 0, icon: Calendar, color: 'bg-purple-500', href: '/dashboard/evenements' },
-    { label: 'Équipes', value: stats?.nbEquipes || 0, icon: GraduationCap, color: 'bg-orange-500', href: '/dashboard/equipes' },
-    { label: 'Doctorants', value: stats?.nbDoctorants || 0, icon: GraduationCap, color: 'bg-teal-500', href: '/dashboard/membres' },
-    { label: 'Conventions actives', value: stats?.nbConventionsActives || 0, icon: FileText, color: 'bg-indigo-500', href: '/dashboard/conventions' },
-    { label: 'Adhésions en attente', value: pendingCount, icon: ClipboardCheck, color: pendingCount > 0 ? 'bg-red-500' : 'bg-gray-400', href: '/dashboard/demandes-adhesion' },
+    { label: t.dash.activeMembers, value: stats?.nbMembres || 0, icon: Users, color: 'bg-blue-500', href: '/dashboard/membres' },
+    { label: t.dash.publications, value: stats?.nbPublications || 0, icon: BookOpen, color: 'bg-green-500', href: '/dashboard/publications' },
+    { label: t.dash.events, value: stats?.nbEvenements || 0, icon: Calendar, color: 'bg-purple-500', href: '/dashboard/evenements' },
+    { label: t.dash.teams, value: stats?.nbEquipes || 0, icon: GraduationCap, color: 'bg-orange-500', href: '/dashboard/equipes' },
+    { label: t.dash.phds, value: stats?.nbDoctorants || 0, icon: GraduationCap, color: 'bg-teal-500', href: '/dashboard/membres' },
+    { label: t.dash.activeConventions, value: stats?.nbConventionsActives || 0, icon: FileText, color: 'bg-indigo-500', href: '/dashboard/conventions' },
+    { label: t.dash.pendingMemberships, value: pendingCount, icon: ClipboardCheck, color: pendingCount > 0 ? 'bg-red-500' : 'bg-gray-400', href: '/dashboard/demandes-adhesion' },
   ];
 
   return (
@@ -154,7 +156,7 @@ function DashboardAdmin({ stats, evenements, publications }: {
           <Link key={c.label} href={c.href}>
             <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
               <div className={`${c.color} p-3 rounded-lg shrink-0`}><c.icon size={22} className="text-white" /></div>
-              <div><p className="text-xl font-bold text-gray-800">{c.value}</p><p className="text-xs text-gray-500">{c.label}</p></div>
+              <div><p className="text-xl font-bold text-gray-800 dark:text-stone-100">{c.value}</p><p className="text-xs text-gray-500 dark:text-stone-400">{c.label}</p></div>
             </Card>
           </Link>
         ))}
@@ -163,32 +165,32 @@ function DashboardAdmin({ stats, evenements, publications }: {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold">Prochains événements</h2>
-            <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
+            <h2 className="font-heading font-semibold">{t.dash.upcomingEvents}</h2>
+            <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">{t.dash.viewAll} <ArrowRight size={14} /></Link>
           </div>
           <div className="space-y-2">
             {evenements.filter(e => e.statut === 'PLANIFIE').slice(0, 5).map(e => (
-              <div key={e.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <div><p className="font-medium text-sm">{e.titre}</p><p className="text-xs text-gray-500">{formatDate(e.dateDebut)}</p></div>
+              <div key={e.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-stone-800 rounded-lg">
+                <div><p className="font-medium text-sm">{e.titre}</p><p className="text-xs text-gray-500 dark:text-stone-400">{formatDate(e.dateDebut)}</p></div>
                 <Badge className={getStatutColor(e.statut)}>{e.statut}</Badge>
               </div>
             ))}
-            {evenements.filter(e => e.statut === 'PLANIFIE').length === 0 && <p className="text-sm text-gray-400">Aucun événement planifié</p>}
+            {evenements.filter(e => e.statut === 'PLANIFIE').length === 0 && <p className="text-sm text-gray-400">{t.dash.noPlannedEvent}</p>}
           </div>
         </Card>
 
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold">Dernières publications</h2>
-            <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
+            <h2 className="font-heading font-semibold">{t.dash.latestPublications}</h2>
+            <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">{t.dash.viewAll} <ArrowRight size={14} /></Link>
           </div>
           <div className="space-y-2">
             {publications.slice(0, 5).map(p => (
-              <div key={p.id} className="p-2 bg-gray-50 rounded-lg">
+              <div key={p.id} className="p-2 bg-gray-50 dark:bg-stone-800 rounded-lg">
                 <p className="font-medium text-sm">{p.titre}</p>
                 <div className="flex gap-2 mt-1">
                   <Badge className="bg-blue-100 text-blue-800 text-xs">{p.typePub}</Badge>
-                  <span className="text-xs text-gray-500">{p.annee}</span>
+                  <span className="text-xs text-gray-500 dark:text-stone-400">{p.annee}</span>
                 </div>
               </div>
             ))}
@@ -223,6 +225,7 @@ function formatAuditDate(iso: string) {
 
 // ─── Dashboard DIRECTEUR ────────────────────────────────────────────────────
 function DashboardDirecteur({ stats }: { stats: DashboardStats | null }) {
+  const t = useT();
   const [logs, setLogs] = useState<AuditLog[]>([]);
 
   useEffect(() => {
@@ -237,47 +240,46 @@ function DashboardDirecteur({ stats }: { stats: DashboardStats | null }) {
         <Link href="/dashboard/equipes">
           <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
             <div className="bg-orange-500 p-3 rounded-lg shrink-0"><GraduationCap size={22} className="text-white" /></div>
-            <div><p className="text-xl font-bold text-gray-800">{stats?.nbEquipes || 0}</p><p className="text-xs text-gray-500">Équipes</p></div>
+            <div><p className="text-xl font-bold text-gray-800 dark:text-stone-100">{stats?.nbEquipes || 0}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.teams}</p></div>
           </Card>
         </Link>
         <Link href="/dashboard/membres">
           <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
             <div className="bg-blue-500 p-3 rounded-lg shrink-0"><Users size={22} className="text-white" /></div>
-            <div><p className="text-xl font-bold text-gray-800">{stats?.nbMembres || 0}</p><p className="text-xs text-gray-500">Membres actifs</p></div>
+            <div><p className="text-xl font-bold text-gray-800 dark:text-stone-100">{stats?.nbMembres || 0}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.activeMembers}</p></div>
           </Card>
         </Link>
         <Link href="/dashboard/publications">
           <Card className="flex items-center gap-3 hover:shadow-md transition-shadow cursor-pointer">
             <div className="bg-green-500 p-3 rounded-lg shrink-0"><BookOpen size={22} className="text-white" /></div>
-            <div><p className="text-xl font-bold text-gray-800">{stats?.nbPublications || 0}</p><p className="text-xs text-gray-500">Publications</p></div>
+            <div><p className="text-xl font-bold text-gray-800 dark:text-stone-100">{stats?.nbPublications || 0}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.publications}</p></div>
           </Card>
         </Link>
       </div>
 
-      {/* Historique des actions */}
       <Card>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-heading font-semibold flex items-center gap-2">
-            <History size={18} className="text-primary" /> Historique des actions récentes
+            <History size={18} className="text-primary" /> {t.dash.recentActions}
           </h2>
           <Link href="/dashboard/audit-logs" className="text-primary text-sm flex items-center gap-1 hover:underline">
-            Voir tout <ArrowRight size={14} />
+            {t.dash.viewAll} <ArrowRight size={14} />
           </Link>
         </div>
         {logs.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Aucune action enregistrée</p>
+          <p className="text-sm text-gray-400 text-center py-4">{t.dash.noActions}</p>
         ) : (
           <div className="space-y-2">
             {logs.map(log => (
-              <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-stone-800 rounded-lg">
                 <div className="shrink-0 mt-0.5">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-600'}`}>
                     {log.action}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 font-medium truncate">{log.entite}</p>
-                  {log.details && <p className="text-xs text-gray-500 truncate">{log.details}</p>}
+                  <p className="text-sm text-gray-800 dark:text-stone-100 font-medium truncate">{log.entite}</p>
+                  {log.details && <p className="text-xs text-gray-500 dark:text-stone-400 truncate">{log.details}</p>}
                   <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                     <Clock size={10} /> {log.utilisateur} — {formatAuditDate(log.date)}
                   </p>
@@ -297,18 +299,19 @@ function DashboardChef({ stats, evenements, publications }: {
   evenements: EvenementResponse[];
   publications: PublicationResponse[];
 }) {
+  const t = useT();
   const { role } = useAuthStore();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
-          { label: 'Membres', value: stats?.nbMembres || 0, icon: Users, color: 'bg-blue-500' },
-          { label: 'Publications', value: stats?.nbPublications || 0, icon: BookOpen, color: 'bg-green-500' },
-          { label: 'Événements', value: stats?.nbEvenements || 0, icon: Calendar, color: 'bg-purple-500' },
+          { label: t.dash.members, value: stats?.nbMembres || 0, icon: Users, color: 'bg-blue-500' },
+          { label: t.dash.publications, value: stats?.nbPublications || 0, icon: BookOpen, color: 'bg-green-500' },
+          { label: t.dash.events, value: stats?.nbEvenements || 0, icon: Calendar, color: 'bg-purple-500' },
         ].map(c => (
           <Card key={c.label} className="flex items-center gap-3">
             <div className={`${c.color} p-3 rounded-lg`}><c.icon size={22} className="text-white" /></div>
-            <div><p className="text-xl font-bold">{c.value}</p><p className="text-xs text-gray-500">{c.label}</p></div>
+            <div><p className="text-xl font-bold">{c.value}</p><p className="text-xs text-gray-500 dark:text-stone-400">{c.label}</p></div>
           </Card>
         ))}
       </div>
@@ -318,8 +321,8 @@ function DashboardChef({ stats, evenements, publications }: {
           <div className="flex items-center gap-3">
             <Shield size={20} className="text-blue-500" />
             <div>
-              <p className="font-semibold text-gray-800">Vice-Directeur</p>
-              <p className="text-sm text-gray-500">Accès supervision : statistiques, membres, publications, équipes, événements</p>
+              <p className="font-semibold text-gray-800 dark:text-stone-100">{t.dash.viceDirTitle}</p>
+              <p className="text-sm text-gray-500 dark:text-stone-400">{t.dash.viceDirAccess}</p>
             </div>
           </div>
         </Card>
@@ -327,21 +330,21 @@ function DashboardChef({ stats, evenements, publications }: {
 
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
-          <h2 className="font-heading font-semibold mb-3">Prochains événements</h2>
+          <h2 className="font-heading font-semibold mb-3">{t.dash.upcomingEvents}</h2>
           <div className="space-y-2">
             {evenements.filter(e => e.statut === 'PLANIFIE').slice(0, 4).map(e => (
-              <div key={e.id} className="flex justify-between p-2 bg-gray-50 rounded">
-                <div><p className="text-sm font-medium">{e.titre}</p><p className="text-xs text-gray-500">{formatDate(e.dateDebut)}</p></div>
+              <div key={e.id} className="flex justify-between p-2 bg-gray-50 dark:bg-stone-800 rounded">
+                <div><p className="text-sm font-medium">{e.titre}</p><p className="text-xs text-gray-500 dark:text-stone-400">{formatDate(e.dateDebut)}</p></div>
                 <Badge className={getStatutColor(e.statut)}>{e.statut}</Badge>
               </div>
             ))}
           </div>
         </Card>
         <Card>
-          <h2 className="font-heading font-semibold mb-3">Publications récentes</h2>
+          <h2 className="font-heading font-semibold mb-3">{t.dash.recentPublications}</h2>
           <div className="space-y-2">
             {publications.slice(0, 4).map(p => (
-              <div key={p.id} className="p-2 bg-gray-50 rounded">
+              <div key={p.id} className="p-2 bg-gray-50 dark:bg-stone-800 rounded">
                 <p className="text-sm font-medium">{p.titre}</p>
                 <Badge className="bg-blue-100 text-blue-800 text-xs mt-1">{p.typePub}</Badge>
               </div>
@@ -359,6 +362,7 @@ function DashboardPermanent({ evenements, publications, profil }: {
   publications: PublicationResponse[];
   profil: MembreDetail | null;
 }) {
+  const t = useT();
   const { membreId } = useAuthStore();
   const userId = profil?.id ?? membreId;
   const myPubs = publications.filter(p => p.auteurs?.some(a => Number(a.id) === Number(userId)));
@@ -367,58 +371,58 @@ function DashboardPermanent({ evenements, publications, profil }: {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="flex items-center gap-3">
           <div className="bg-green-500 p-3 rounded-lg"><BookOpen size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{myPubs.length}</p><p className="text-xs text-gray-500">Mes publications</p></div>
+          <div><p className="text-xl font-bold">{myPubs.length}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.myPublications}</p></div>
         </Card>
         <Card className="flex items-center gap-3">
           <div className="bg-purple-500 p-3 rounded-lg"><Calendar size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{evenements.length}</p><p className="text-xs text-gray-500">Événements</p></div>
+          <div><p className="text-xl font-bold">{evenements.length}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.events}</p></div>
         </Card>
         <Card className="flex items-center gap-3">
           <div className="bg-blue-500 p-3 rounded-lg"><Briefcase size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{profil?.affiliations?.filter(a => a.actif).length || 0}</p><p className="text-xs text-gray-500">Équipe(s) actives</p></div>
+          <div><p className="text-xl font-bold">{profil?.affiliations?.filter(a => a.actif).length || 0}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.activeTeams}</p></div>
         </Card>
       </div>
 
       {profil?.affiliations?.some(a => a.actif) && (
         <Card className="border-l-4 border-blue-500">
-          <p className="text-sm font-medium text-gray-700">Équipe actuelle :</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-stone-300">{t.dash.currentTeam}</p>
           {profil.affiliations.filter(a => a.actif).map(a => (
             <p key={a.id} className="font-semibold text-primary">{a.equipeNom}</p>
           ))}
-          <p className="text-xs text-gray-400 mt-1">Depuis le {formatDate(profil.affiliations.find(a => a.actif)?.dateDebut || '')}</p>
+          <p className="text-xs text-gray-400 mt-1">{t.dash.since} {formatDate(profil.affiliations.find(a => a.actif)?.dateDebut || '')}</p>
         </Card>
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <div className="flex justify-between mb-3">
-            <h2 className="font-heading font-semibold">Mes publications</h2>
-            <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
+            <h2 className="font-heading font-semibold">{t.dash.myPublications}</h2>
+            <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">{t.dash.viewAll} <ArrowRight size={14} /></Link>
           </div>
           <div className="space-y-2">
             {myPubs.slice(0, 4).map(p => (
-              <div key={p.id} className="p-2 bg-gray-50 rounded">
+              <div key={p.id} className="p-2 bg-gray-50 dark:bg-stone-800 rounded">
                 <p className="text-sm font-medium">{p.titre}</p>
                 <div className="flex gap-2 mt-1">
                   <Badge className="bg-blue-100 text-blue-800 text-xs">{p.typePub}</Badge>
-                  <span className="text-xs text-gray-500">{p.annee}</span>
+                  <span className="text-xs text-gray-500 dark:text-stone-400">{p.annee}</span>
                 </div>
               </div>
             ))}
             {myPubs.length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-3">Aucune publication pour l&apos;instant</p>
+              <p className="text-sm text-gray-400 text-center py-3">{t.dash.noPubs}</p>
             )}
           </div>
         </Card>
         <Card>
           <div className="flex justify-between mb-3">
-            <h2 className="font-heading font-semibold">Prochains événements</h2>
-            <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
+            <h2 className="font-heading font-semibold">{t.dash.upcomingEvents}</h2>
+            <Link href="/dashboard/evenements" className="text-primary text-sm flex items-center gap-1">{t.dash.viewAll} <ArrowRight size={14} /></Link>
           </div>
           <div className="space-y-2">
             {evenements.filter(e => e.statut === 'PLANIFIE').slice(0, 4).map(e => (
-              <div key={e.id} className="flex justify-between p-2 bg-gray-50 rounded">
-                <div><p className="text-sm font-medium">{e.titre}</p><p className="text-xs text-gray-500">{formatDate(e.dateDebut)}</p></div>
+              <div key={e.id} className="flex justify-between p-2 bg-gray-50 dark:bg-stone-800 rounded">
+                <div><p className="text-sm font-medium">{e.titre}</p><p className="text-xs text-gray-500 dark:text-stone-400">{formatDate(e.dateDebut)}</p></div>
               </div>
             ))}
           </div>
@@ -433,15 +437,16 @@ function DashboardAssocie({ evenements, publications }: {
   evenements: EvenementResponse[];
   publications: PublicationResponse[];
 }) {
+  const t = useT();
   const { membreId } = useAuthStore();
   return (
     <div className="space-y-6">
-      <Card className="border-l-4 border-purple-500 bg-purple-50">
+      <Card className="border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-950/30">
         <div className="flex items-center gap-3">
           <Users size={20} className="text-purple-600" />
           <div>
-            <p className="font-semibold text-gray-800">Membre Associé</p>
-            <p className="text-sm text-gray-600">Accès : consultation, événements, publications selon droits accordés</p>
+            <p className="font-semibold text-gray-800 dark:text-stone-100">{t.dash.associateTitle}</p>
+            <p className="text-sm text-gray-600 dark:text-stone-400">{t.dash.associateAccess}</p>
           </div>
         </div>
       </Card>
@@ -449,11 +454,11 @@ function DashboardAssocie({ evenements, publications }: {
       <div className="grid grid-cols-2 gap-4">
         <Card className="flex items-center gap-3">
           <div className="bg-green-500 p-3 rounded-lg"><BookOpen size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{publications.length}</p><p className="text-xs text-gray-500">Publications disponibles</p></div>
+          <div><p className="text-xl font-bold">{publications.length}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.availablePubs}</p></div>
         </Card>
         <Card className="flex items-center gap-3">
           <div className="bg-purple-500 p-3 rounded-lg"><Calendar size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{evenements.filter(e => e.statut !== 'ANNULE').length}</p><p className="text-xs text-gray-500">Événements</p></div>
+          <div><p className="text-xl font-bold">{evenements.filter(e => e.statut !== 'ANNULE').length}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.events}</p></div>
         </Card>
       </div>
 
@@ -461,12 +466,12 @@ function DashboardAssocie({ evenements, publications }: {
 
       <Card>
         <div className="flex justify-between mb-3">
-          <h2 className="font-heading font-semibold">Publications récentes</h2>
-          <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">Voir tout <ArrowRight size={14} /></Link>
+          <h2 className="font-heading font-semibold">{t.dash.recentPublications}</h2>
+          <Link href="/dashboard/publications" className="text-primary text-sm flex items-center gap-1">{t.dash.viewAll} <ArrowRight size={14} /></Link>
         </div>
         <div className="space-y-2">
           {publications.slice(0, 5).map(p => (
-            <div key={p.id} className="p-2 bg-gray-50 rounded">
+            <div key={p.id} className="p-2 bg-gray-50 dark:bg-stone-800 rounded">
               <p className="text-sm font-medium">{p.titre}</p>
               <Badge className="bg-blue-100 text-blue-800 text-xs mt-1">{p.typePub}</Badge>
             </div>
@@ -483,17 +488,18 @@ function DashboardDoctorant({ publications, profil, evenements }: {
   profil: MembreDetail | null;
   evenements: EvenementResponse[];
 }) {
+  const t = useT();
   const { membreId } = useAuthStore();
   const userId = profil?.id ?? membreId;
   const myPubs = publications.filter(p => p.auteurs?.some(a => Number(a.id) === Number(userId)));
   return (
     <div className="space-y-6">
-      <Card className="border-l-4 border-green-500 bg-green-50">
+      <Card className="border-l-4 border-green-500 bg-green-50 dark:bg-green-950/30">
         <div className="flex items-center gap-3">
           <GraduationCap size={20} className="text-green-600" />
           <div>
-            <p className="font-semibold text-gray-800">Doctorant</p>
-            <p className="text-sm text-gray-600">Accès : ajouter et consulter des publications · Mon profil · Événements</p>
+            <p className="font-semibold text-gray-800 dark:text-stone-100">{t.dash.phdTitle}</p>
+            <p className="text-sm text-gray-600 dark:text-stone-400">{t.dash.phdAccess}</p>
           </div>
         </div>
       </Card>
@@ -501,19 +507,19 @@ function DashboardDoctorant({ publications, profil, evenements }: {
       <div className="grid grid-cols-2 gap-4">
         <Card className="flex items-center gap-3">
           <div className="bg-green-500 p-3 rounded-lg"><BookOpen size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{myPubs.length}</p><p className="text-xs text-gray-500">Mes publications</p></div>
+          <div><p className="text-xl font-bold">{myPubs.length}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.myPublications}</p></div>
         </Card>
         <Card className="flex items-center gap-3">
           <div className="bg-blue-500 p-3 rounded-lg"><GraduationCap size={22} className="text-white" /></div>
-          <div><p className="text-xl font-bold">{profil?.affiliations?.filter(a => a.actif).length || 0}</p><p className="text-xs text-gray-500">Équipe(s)</p></div>
+          <div><p className="text-xl font-bold">{profil?.affiliations?.filter(a => a.actif).length || 0}</p><p className="text-xs text-gray-500 dark:text-stone-400">{t.dash.teams}</p></div>
         </Card>
       </div>
 
       {profil?.affiliations?.some(a => a.actif) && (
         <Card className="border-l-4 border-green-400">
-          <p className="text-sm text-gray-500">Équipe de recherche :</p>
+          <p className="text-sm text-gray-500 dark:text-stone-400">{t.dash.researchTeam}</p>
           <p className="font-semibold text-primary text-lg">{profil.affiliations.find(a => a.actif)?.equipeNom}</p>
-          <p className="text-xs text-gray-400">Depuis {formatDate(profil.affiliations.find(a => a.actif)?.dateDebut || '')}</p>
+          <p className="text-xs text-gray-400">{t.dash.since2} {formatDate(profil.affiliations.find(a => a.actif)?.dateDebut || '')}</p>
         </Card>
       )}
 
@@ -521,21 +527,21 @@ function DashboardDoctorant({ publications, profil, evenements }: {
 
       <Card>
         <div className="flex justify-between mb-3">
-          <h2 className="font-heading font-semibold">Mes publications</h2>
+          <h2 className="font-heading font-semibold">{t.dash.myPublications}</h2>
           <Link href="/dashboard/publications" className="bg-primary text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1">
-            <BookOpen size={14} /> Ajouter
+            <BookOpen size={14} /> {t.dash.add}
           </Link>
         </div>
         {myPubs.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Aucune publication pour l&apos;instant</p>
+          <p className="text-sm text-gray-400 text-center py-4">{t.dash.noPubs}</p>
         ) : (
           <div className="space-y-2">
             {myPubs.slice(0, 6).map(p => (
-              <div key={p.id} className="p-3 bg-gray-50 rounded-lg">
+              <div key={p.id} className="p-3 bg-gray-50 dark:bg-stone-800 rounded-lg">
                 <p className="font-medium text-sm">{p.titre}</p>
                 <div className="flex gap-2 mt-1">
                   <Badge className="bg-green-100 text-green-800 text-xs">{p.typePub}</Badge>
-                  <span className="text-xs text-gray-500">{p.annee}</span>
+                  <span className="text-xs text-gray-500 dark:text-stone-400">{p.annee}</span>
                 </div>
               </div>
             ))}
@@ -548,6 +554,7 @@ function DashboardDoctorant({ publications, profil, evenements }: {
 
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const t = useT();
   const { role, statut, membreId, nom, prenom } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [evenements, setEvenements] = useState<EvenementResponse[]>([]);
@@ -565,25 +572,28 @@ export default function DashboardPage() {
     }
   }, [role, membreId]);
 
-  const greeting = `Bonjour, ${prenom} ${nom}`;
+  const greeting = `${t.dash.greeting} ${prenom} ${nom}`;
+
+  const roleLabel = (() => {
+    if (role === RoleSysteme.ADMIN) return t.dash.roleAdmin;
+    if (role === RoleSysteme.DIRECTEUR) return t.dash.roleDirector;
+    if (role === RoleSysteme.VICE_DIRECTEUR) return t.dash.roleViceDir;
+    if (role === RoleSysteme.CHEF_EQUIPE) return t.dash.roleTeamLeader;
+    if (role === RoleSysteme.MEMBRE && statut === StatutMembre.PERMANENT) return t.dash.rolePermanent;
+    if (role === RoleSysteme.MEMBRE && statut === StatutMembre.ASSOCIE) return t.dash.roleAssociate;
+    if (role === RoleSysteme.MEMBRE && statut === StatutMembre.DOCTORANT) return t.dash.rolePhd;
+    return '';
+  })();
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-800">{greeting}</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {role === RoleSysteme.ADMIN && 'Administrateur système'}
-            {role === RoleSysteme.DIRECTEUR && 'Directeur du laboratoire'}
-            {role === RoleSysteme.VICE_DIRECTEUR && 'Vice-Directeur'}
-            {role === RoleSysteme.CHEF_EQUIPE && 'Chef d\'équipe'}
-            {role === RoleSysteme.MEMBRE && statut === StatutMembre.PERMANENT && 'Membre permanent'}
-            {role === RoleSysteme.MEMBRE && statut === StatutMembre.ASSOCIE && 'Membre associé'}
-            {role === RoleSysteme.MEMBRE && statut === StatutMembre.DOCTORANT && 'Doctorant'}
-          </p>
+          <h1 className="text-2xl font-heading font-bold text-gray-800 dark:text-stone-100">{greeting}</h1>
+          <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">{roleLabel}</p>
         </div>
-        <Link href="/dashboard/notifications" className="relative p-2 hover:bg-gray-100 rounded-lg">
-          <Bell size={22} className="text-gray-600" />
+        <Link href="/dashboard/notifications" className="relative p-2 hover:bg-gray-100 dark:hover:bg-stone-800 rounded-lg">
+          <Bell size={22} className="text-gray-600 dark:text-stone-300" />
         </Link>
       </div>
 

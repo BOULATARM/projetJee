@@ -47,4 +47,125 @@ export const en: Dict = {
     collapse:         'Collapse menu',
     close:            'Close menu',
   },
+
+  // ── Public pages ────────────────────────────────────────────────────
+  pub: {
+    // nav
+    login:                'Login',
+    join:                 'Join',
+    backHome:             '← Back to home',
+    footer:               '© 2025 LIAS - Faculty of Sciences Ben M\'Sik, Casablanca, Morocco',
+
+    // homepage
+    about:                'About the laboratory',
+    founded:              'Founded on',
+    researchAxes:         'Research axes:',
+    loading:              'Loading...',
+    keyFigures:           'Key figures',
+    members:              'Members',
+    publications:         'Publications',
+    events:               'Events',
+    teams:                'Teams',
+    recentMembers:        'Recent members',
+    viewAllMembers:       'View all members →',
+    latestPublications:   'Latest publications',
+    viewAllPubs:          'View all publications →',
+    unspecifiedAuthors:   'Unspecified authors',
+    ourTeams:             'Our Teams',
+    viewAllTeams:         'View all teams →',
+    noTeams:              'No teams available.',
+    upcomingEvents:       'Upcoming events',
+
+    // membres
+    membresTitle:         'Our Members',
+    direction:            'Laboratory Direction',
+    director:             'Director',
+    viceDirector:         'Vice-Director',
+    teamLeaders:          'Team Leaders',
+    teamLeaderRole:       'Team Leader',
+    teamLeaderOf:         'Team leader of:',
+    teamLabel:            'Team:',
+    allMembers:           'All Members',
+
+    // equipes
+    equipesTitle:         'Our Teams',
+    teamLeaderSmall:      'Team leader',
+    noEquipes:            'No teams available.',
+
+    // events
+    eventsTitle:          'Scientific Events',
+    eventsSubtitle:       'Scientific events',
+    eventsSearch:         'Search for an event...',
+    allTypes:             'All types',
+    loadError:            'Unable to load data.',
+    retry:                'Retry',
+    noEvents:             'No upcoming events.',
+
+    // publications
+    pubsTitle:            'Publications',
+    pubsSubtitle:         'Scientific publications',
+    pubsSearch:           'Search for a publication...',
+    allYears:             'All years',
+    noPubs:               'No publications found.',
+    journal:              'Journal:',
+    conference:           'Conference:',
+  },
+
+  // ── Dashboard pages ────────────────────────────────────────────────
+  dash: {
+    greeting:             'Hello,',
+    roleAdmin:            'System administrator',
+    roleDirector:         'Laboratory director',
+    roleViceDir:          'Vice-Director',
+    roleTeamLeader:       'Team leader',
+    rolePermanent:        'Permanent member',
+    roleAssociate:        'Associate member',
+    rolePhd:              'PhD student',
+
+    activeMembers:        'Active members',
+    publications:         'Publications',
+    events:               'Events',
+    teams:                'Teams',
+    phds:                 'PhD students',
+    activeConventions:    'Active agreements',
+    pendingMemberships:   'Pending memberships',
+
+    upcomingEvents:       'Upcoming events',
+    latestPublications:   'Latest publications',
+    recentPublications:   'Recent publications',
+    noPlannedEvent:       'No planned events',
+    recentActions:        'Recent actions history',
+    noActions:            'No actions recorded',
+    viewAll:              'View all',
+
+    availableEvents:      'Available events',
+    noEventsAvail:        'No events available.',
+    participate:          'Participate',
+    confirmed:            'Confirmed',
+    pending:              'Pending',
+    refused:              'Refused',
+    needsConfirmation:    'Your participation requires confirmation from the lab director.',
+
+    myPublications:       'My publications',
+    noPubs:               'No publications yet',
+    activeTeams:          'Active team(s)',
+    currentTeam:          'Current team:',
+    since:                'Since',
+    researchTeam:         'Research team:',
+    since2:               'Since',
+
+    associateTitle:       'Associate Member',
+    associateAccess:      'Access: consultation, events, publications per granted rights',
+    availablePubs:        'Available publications',
+
+    phdTitle:             'PhD Student',
+    phdAccess:            'Access: add and view publications · My profile · Events',
+    add:                  'Add',
+
+    viceDirTitle:         'Vice-Director',
+    viceDirAccess:        'Supervision access: statistics, members, publications, teams, events',
+
+    members:              'Members',
+    requestError:         'Error submitting the request.',
+  },
 };

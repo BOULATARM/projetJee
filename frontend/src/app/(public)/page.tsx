@@ -12,8 +12,11 @@ import { equipeService } from '@/services/equipe.service';
 import { DashboardStats, MembreResponse, PublicationResponse, EvenementResponse, Equipe, Laboratoire } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { laboratoireService } from '@/services/laboratoire.service';
+import { PublicHeader } from '@/components/layout/PublicHeader';
+import { useT } from '@/hooks/useT';
 
 export default function HomePage() {
+  const t = useT();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [membres, setMembres] = useState<MembreResponse[]>([]);
   const [publications, setPublications] = useState<PublicationResponse[]>([]);
@@ -42,40 +45,25 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-primary text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-heading font-bold">{labo?.acronyme ?? 'LIAS'}</h1>
-            <p className="text-blue-200">{labo?.nom ?? 'Laboratoire d\'Informatique et d\'Applications Scientifiques'}</p>
-          </div>
-          <nav className="flex items-center gap-3 flex-wrap">
-            <Link href="/membres" className="text-white hover:text-blue-200 text-sm">Membres</Link>
-            <Link href="/equipes" className="text-white hover:text-blue-200 text-sm">Équipes</Link>
-            <Link href="/evenements" className="text-white hover:text-blue-200 text-sm">Événements</Link>
-            <Link href="/publications" className="text-white hover:text-blue-200 text-sm">Publications</Link>
-            <Link href="/auth/login" className="bg-white text-primary px-4 py-2 rounded-lg font-medium hover:bg-blue-50">
-              Connexion
-            </Link>
-            <Link href="/adhesion" className="bg-accent text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700">
-              Adhésion
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-stone-900">
+      <PublicHeader
+        title={labo?.acronyme ?? 'LIAS'}
+        subtitle={labo?.nom ?? "Laboratoire d'Informatique et d'Applications Scientifiques"}
+        fullNav
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <section className="mb-12">
-          <h2 className="text-2xl font-heading font-bold text-primary mb-6">À propos du laboratoire</h2>
-          <Card className="text-gray-600 leading-relaxed">
+          <h2 className="text-2xl font-heading font-bold text-primary mb-6">{t.pub.about}</h2>
+          <Card className="text-gray-600 dark:text-stone-300 leading-relaxed">
             {labo ? (
               <>
-                <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-500">
+                <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-500 dark:text-stone-400">
                   {labo.acronyme && (
                     <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-semibold">{labo.acronyme}</span>
                   )}
                   {labo.dateCreation && (
-                    <span>Fondé le {new Date(labo.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    <span>{t.pub.founded} {new Date(labo.dateCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   )}
                   {labo.adresse && (
                     <span>{labo.adresse}</span>
@@ -84,36 +72,36 @@ export default function HomePage() {
                 <p className="mb-4">{labo.description}</p>
                 {labo.axesDeRecherche && (
                   <p>
-                    <span className="font-medium text-gray-700">Axes de recherche : </span>
+                    <span className="font-medium text-gray-700 dark:text-stone-200">{t.pub.researchAxes} </span>
                     {labo.axesDeRecherche}
                   </p>
                 )}
               </>
             ) : (
-              <p className="text-gray-400">Chargement...</p>
+              <p className="text-gray-400">{t.pub.loading}</p>
             )}
           </Card>
         </section>
 
         {stats && (
           <section className="mb-12">
-            <h2 className="text-2xl font-heading font-bold text-primary mb-6">Chiffres clés</h2>
+            <h2 className="text-2xl font-heading font-bold text-primary mb-6">{t.pub.keyFigures}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card className="text-center">
                 <p className="text-3xl font-bold text-primary">{stats.nbMembres}</p>
-                <p className="text-sm text-gray-500 mt-1">Membres</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">{t.pub.members}</p>
               </Card>
               <Card className="text-center">
                 <p className="text-3xl font-bold text-primary">{stats.nbPublications}</p>
-                <p className="text-sm text-gray-500 mt-1">Publications</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">{t.pub.publications}</p>
               </Card>
               <Card className="text-center">
                 <p className="text-3xl font-bold text-primary">{stats.nbEvenements}</p>
-                <p className="text-sm text-gray-500 mt-1">Événements</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">{t.pub.events}</p>
               </Card>
               <Card className="text-center">
                 <p className="text-3xl font-bold text-primary">{stats.nbEquipes}</p>
-                <p className="text-sm text-gray-500 mt-1">Équipes</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">{t.pub.teams}</p>
               </Card>
             </div>
           </section>
@@ -121,7 +109,7 @@ export default function HomePage() {
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <section>
-            <h2 className="text-xl font-heading font-bold text-primary mb-4">Membres récents</h2>
+            <h2 className="text-xl font-heading font-bold text-primary mb-4">{t.pub.recentMembers}</h2>
             <div className="space-y-3">
               {membres.slice(0, 5).map((m) => (
                 <Link key={m.id} href={`/membres/${m.id}`}>
@@ -135,18 +123,18 @@ export default function HomePage() {
                 </Link>
               ))}
               {membres.length > 5 && (
-                <Link href="/membres" className="text-primary hover:underline text-sm">Voir tous les membres →</Link>
+                <Link href="/membres" className="text-primary hover:underline text-sm">{t.pub.viewAllMembers}</Link>
               )}
             </div>
           </section>
 
           <section>
-            <h2 className="text-xl font-heading font-bold text-primary mb-4">Dernières publications</h2>
+            <h2 className="text-xl font-heading font-bold text-primary mb-4">{t.pub.latestPublications}</h2>
             <div className="space-y-3">
               {publications.slice(0, 5).map((p) => (
                 <Card key={p.id}>
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-gray-900">{p.titre}</p>
+                    <p className="font-medium text-gray-900 dark:text-stone-100">{p.titre}</p>
                     <a
                       href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/publications/${p.id}/download`}
                       target="_blank"
@@ -157,17 +145,17 @@ export default function HomePage() {
                       PDF
                     </a>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">
                     {p.auteurs && p.auteurs.length > 0
                       ? p.auteurs.map(a => `${a.prenom} ${a.nom}`).join(', ')
-                      : <span className="italic">Auteurs non spécifiés</span>
+                      : <span className="italic">{t.pub.unspecifiedAuthors}</span>
                     } • {p.annee}
                   </p>
                   <Badge className="mt-2 bg-blue-100 text-blue-800">{p.typePub}</Badge>
                 </Card>
               ))}
               {publications.length > 5 && (
-                <Link href="/publications" className="text-primary hover:underline text-sm">Voir toutes les publications →</Link>
+                <Link href="/publications" className="text-primary hover:underline text-sm">{t.pub.viewAllPubs}</Link>
               )}
             </div>
           </section>
@@ -175,29 +163,29 @@ export default function HomePage() {
 
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-heading font-bold text-primary">Nos Équipes</h2>
-            <Link href="/equipes" className="text-primary hover:underline text-sm">Voir toutes les équipes →</Link>
+            <h2 className="text-xl font-heading font-bold text-primary">{t.pub.ourTeams}</h2>
+            <Link href="/equipes" className="text-primary hover:underline text-sm">{t.pub.viewAllTeams}</Link>
           </div>
           {!equipesLoaded ? (
-            <p className="text-sm text-gray-400">Chargement...</p>
+            <p className="text-sm text-gray-400">{t.pub.loading}</p>
           ) : equipes.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune équipe disponible.</p>
+            <p className="text-sm text-gray-400">{t.pub.noTeams}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {equipes.slice(0, 3).map((eq) => (
                 <Link key={eq.id} href={`/equipes/${eq.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full p-5 flex flex-col gap-2">
-                    <h3 className="font-bold text-gray-900">{eq.nom}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-stone-100">{eq.nom}</h3>
                     {eq.axeRecherche && (
                       <p className="text-xs text-blue-600 font-medium">{eq.axeRecherche}</p>
                     )}
                     {eq.description && (
-                      <p className="text-sm text-gray-500 line-clamp-2 flex-1">{eq.description}</p>
+                      <p className="text-sm text-gray-500 dark:text-stone-400 line-clamp-2 flex-1">{eq.description}</p>
                     )}
                     {eq.chefEquipe && (
                       <div className="flex items-center gap-2 mt-1">
                         <Avatar photo={eq.chefEquipe.photo} nom={eq.chefEquipe.nom} prenom={eq.chefEquipe.prenom} size={24} />
-                        <p className="text-xs text-gray-500">{eq.chefEquipe.prenom} {eq.chefEquipe.nom}</p>
+                        <p className="text-xs text-gray-500 dark:text-stone-400">{eq.chefEquipe.prenom} {eq.chefEquipe.nom}</p>
                       </div>
                     )}
                   </Card>
@@ -208,14 +196,14 @@ export default function HomePage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-xl font-heading font-bold text-primary mb-4">Prochains événements</h2>
+          <h2 className="text-xl font-heading font-bold text-primary mb-4">{t.pub.upcomingEvents}</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {evenements.filter(e => e.statut === 'PLANIFIE' || e.statut === 'EN_COURS').slice(0, 3).map((e) => (
               <Card key={e.id}>
                 <Badge className={getStatutColor(e.statut)}>{e.statut}</Badge>
                 <h3 className="font-bold text-lg mt-2">{e.titre}</h3>
-                <p className="text-sm text-gray-500 mt-1">{formatDate(e.dateDebut)}</p>
-                <p className="text-sm text-gray-500">{e.lieu}</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400 mt-1">{formatDate(e.dateDebut)}</p>
+                <p className="text-sm text-gray-500 dark:text-stone-400">{e.lieu}</p>
               </Card>
             ))}
           </div>
@@ -223,7 +211,7 @@ export default function HomePage() {
       </main>
 
       <footer className="bg-primary text-white text-center py-6">
-        <p className="text-sm">© 2025 LIAS - Faculté des Sciences Ben M&apos;Sik, Casablanca, Maroc</p>
+        <p className="text-sm">{t.pub.footer}</p>
       </footer>
     </div>
   );
