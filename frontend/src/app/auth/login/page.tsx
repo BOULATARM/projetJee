@@ -187,11 +187,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
-          <p className="font-medium mb-1">Comptes de test :</p>
-          <p>Admin: admin@lias.ma / admin123</p>
-          <p>Directeur: directeur@lias.ma / directeur123</p>
-        </div>
+        
       </Card>
     </div>
   );
