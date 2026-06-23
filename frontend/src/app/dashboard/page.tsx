@@ -597,11 +597,8 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {(role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR) && (
+      {(role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR) && (
         <DashboardAdmin stats={stats} evenements={evenements} publications={publications} />
-      )}
-      {role === RoleSysteme.VICE_DIRECTEUR && (
-        <DashboardChef stats={stats} evenements={evenements} publications={publications} />
       )}
       {role === RoleSysteme.CHEF_EQUIPE && (
         <DashboardChef stats={stats} evenements={evenements} publications={publications} />
