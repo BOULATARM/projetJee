@@ -11,13 +11,9 @@ import {
   ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList, Search, ScrollText, Building2,
 } from 'lucide-react';
 import { useT } from '@/hooks/useT';
-import type { Dict } from '@/locales/fr';
-
-type NavKey = keyof Dict['nav'];
-
 type MenuItem = {
   href: string;
-  labelKey: NavKey;
+  labelKey: string;
   icon: React.ElementType;
   roles: string[];
   statuts?: string[];

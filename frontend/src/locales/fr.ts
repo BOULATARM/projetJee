@@ -1,4 +1,11 @@
-export const fr = {
+export type Dict = {
+  nav:     Record<string, string>;
+  header:  Record<string, string>;
+  mobile:  Record<string, string>;
+  sidebar: Record<string, string>;
+};
+
+export const fr: Dict = {
   nav: {
     dashboard:        'Tableau de bord',
     mySpace:          'Mon espace',
@@ -45,6 +52,4 @@ export const fr = {
     collapse:         'Réduire le menu',
     close:            'Fermer le menu',
   },
-} as const;
-
-export type Dict = typeof fr;
+};
