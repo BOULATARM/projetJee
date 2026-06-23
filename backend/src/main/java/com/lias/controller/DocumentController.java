@@ -30,13 +30,13 @@ public class DocumentController {
     }
 
     @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<Document>> getPendingDocuments() {
         return ResponseEntity.ok(documentService.getDocumentsPending());
     }
 
     @GetMapping("/historique")
-    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<Document>> getHistorique() {
         return ResponseEntity.ok(documentService.getHistoriqueDecisions());
     }
@@ -64,20 +64,20 @@ public class DocumentController {
         dto.setConventionId(conventionId);
 
         boolean isPrivileged = user.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DIRECTEUR"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DIRECTEUR") || a.getAuthority().equals("ROLE_VICE_DIRECTEUR"));
 
         return ResponseEntity.ok(documentService.uploadDocument(file, dto, user.getMembreId(), isPrivileged));
     }
 
     @PutMapping("/{id}/approuver")
-    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<Document> approuver(@PathVariable Long id,
                                               @AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(documentService.approuverDocument(id, user.getMembreId()));
     }
 
     @PutMapping("/{id}/rejeter")
-    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<Document> rejeter(@PathVariable Long id,
                                             @RequestBody(required = false) Map<String, String> body,
                                             @AuthenticationPrincipal UserPrincipal user) {

@@ -46,13 +46,13 @@ public class MaterielController {
     }
 
     @GetMapping("/sans-distribution")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<Membre>> getMembresSansDistribution() {
         return ResponseEntity.ok(materielService.getMembresSansDistribution());
     }
 
     @PostMapping("/distribuer")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> distribuerMateriel(@Valid @RequestBody DistributionRequestDTO dto,
                                                     @AuthenticationPrincipal UserPrincipal user) {
         materielService.distribuerMateriel(dto, user.getMembreId());
@@ -60,31 +60,31 @@ public class MaterielController {
     }
 
     @GetMapping("/stock")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<Materiel>> getStock() {
         return ResponseEntity.ok(materielService.getMaterielStock());
     }
 
     @GetMapping("/historique")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<DistributionMateriel>> getHistorique() {
         return ResponseEntity.ok(materielService.getHistoriqueDistribution());
     }
 
     @GetMapping("/{id}/historique")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<MaterielHistorique>> getHistoriqueMateriel(@PathVariable Long id) {
         return ResponseEntity.ok(materielService.getHistoriqueMateriel(id));
     }
 
     @GetMapping("/{id}/beneficiaires")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<Membre>> getBeneficiaires(@PathVariable Long id) {
         return ResponseEntity.ok(materielService.getMembresAyantRecu(id));
     }
 
     @GetMapping("/{id}/non-beneficiaires")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<Membre>> getNonBeneficiaires(@PathVariable Long id) {
         return ResponseEntity.ok(materielService.getMembresNAyantPasRecu(id));
     }

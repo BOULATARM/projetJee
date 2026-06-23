@@ -30,20 +30,20 @@ public class ConventionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Convention> createConvention(@Valid @RequestBody ConventionRequestDTO dto) {
         return ResponseEntity.ok(conventionService.creerConvention(dto));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Convention> updateConvention(@PathVariable Long id,
                                                         @Valid @RequestBody ConventionRequestDTO dto) {
         return ResponseEntity.ok(conventionService.updateConvention(id, dto));
     }
 
     @PostMapping("/{id}/activites")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> ajouterActivite(@PathVariable Long id,
                                                  @RequestBody ActiviteConvention activite) {
         conventionService.ajouterActivite(id, activite);

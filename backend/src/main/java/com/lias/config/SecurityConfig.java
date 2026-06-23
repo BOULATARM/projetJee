@@ -52,20 +52,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/participations/**").authenticated()
 
                         // Admin comptes management
-                        .requestMatchers("/api/v1/admin/comptes/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/comptes/**").hasAnyRole("ADMIN", "VICE_DIRECTEUR")
 
-                        // Admin / Directeur only
-                        .requestMatchers(HttpMethod.GET, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers("/api/v1/rapports/**").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/evenements").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/evenements/**").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/evenements/**").hasAnyRole("ADMIN", "DIRECTEUR")
+                        // Admin / Directeur / Vice-Directeur
+                        .requestMatchers(HttpMethod.GET, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/demandes-adhesion/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers("/api/v1/rapports/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/evenements").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/evenements/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/evenements/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/membres/**").hasAnyRole("ADMIN", "DIRECTEUR", "MEMBRE", "CHEF_EQUIPE", "VICE_DIRECTEUR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/membres/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/conventions").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/conventions/**").hasAnyRole("ADMIN", "DIRECTEUR")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/conventions/**").hasAnyRole("ADMIN", "DIRECTEUR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/membres/**").hasAnyRole("ADMIN", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/conventions").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/conventions/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/conventions/**").hasAnyRole("ADMIN", "DIRECTEUR", "VICE_DIRECTEUR")
 
                         // Any authenticated user (DOCTORANT and above)
                         .requestMatchers(HttpMethod.POST, "/api/v1/publications").authenticated()

@@ -38,14 +38,14 @@ public class DemandeParticipationController {
 
     /** Toutes les demandes (directeur/admin) */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<DemandeParticipation>> getAll() {
         return ResponseEntity.ok(participationRepo.findAll());
     }
 
     /** Demandes d'un événement précis */
     @GetMapping("/evenement/{evenementId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<DemandeParticipation>> getByEvenement(
             @PathVariable Long evenementId) {
         return ResponseEntity.ok(participationRepo.findByEvenementId(evenementId));
@@ -82,7 +82,7 @@ public class DemandeParticipationController {
 
     /** Accepter une demande */
     @PutMapping("/{id}/accepter")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<DemandeParticipation> accepter(
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal user) {
@@ -100,7 +100,7 @@ public class DemandeParticipationController {
 
     /** Refuser une demande */
     @PutMapping("/{id}/refuser")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<DemandeParticipation> refuser(
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> body,

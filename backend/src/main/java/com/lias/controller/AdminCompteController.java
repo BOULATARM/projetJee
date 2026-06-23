@@ -22,7 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/admin/comptes")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'VICE_DIRECTEUR')")
 public class AdminCompteController {
 
     private final MembreRepository membreRepository;

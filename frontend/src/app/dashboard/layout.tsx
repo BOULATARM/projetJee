@@ -8,12 +8,14 @@ import { Header } from '@/components/layout/Header';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { LayoutDashboard, MessageCircle, Bell, Menu } from 'lucide-react';
+import { useT } from '@/hooks/useT';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
+  const t = useT();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -46,11 +48,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   };
 
-  // Liens rapides pour la tab bar mobile
   const mobileQuickLinks = [
-    { href: '/dashboard', label: 'Accueil', icon: LayoutDashboard },
-    { href: '/dashboard/messages', label: 'Messages', icon: MessageCircle },
-    { href: '/dashboard/notifications', label: 'Notifs', icon: Bell },
+    { href: '/dashboard',               label: t.mobile.home,     icon: LayoutDashboard },
+    { href: '/dashboard/messages',      label: t.mobile.messages, icon: MessageCircle },
+    { href: '/dashboard/notifications', label: t.mobile.notifs,   icon: Bell },
   ];
 
   return (
@@ -77,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* ── Tab bar mobile (cachée sur desktop) ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around border-t border-border bg-surface px-2 py-2 md:hidden shadow-[0_-4px_12px_rgb(0,0,0,0.06)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around border-t border-border bg-surface px-2 py-2 md:hidden shadow-[0_-4px_12px_rgb(0,0,0,0.06)] dark:shadow-[0_-4px_12px_rgb(0,0,0,0.3)]">
         {mobileQuickLinks.map(({ href, label, icon: Icon }) => {
           const isActive = href === '/dashboard'
             ? pathname === '/dashboard'
@@ -100,10 +101,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Bouton menu complet */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium text-stone-400 hover:text-stone-600 transition-colors"
+          className="flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 transition-colors"
         >
           <Menu size={20} strokeWidth={1.8} />
-          Menu
+          {t.mobile.menu}
         </button>
       </nav>
     </div>

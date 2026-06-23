@@ -10,44 +10,48 @@ import {
   MessageCircle, Bell, BarChart3, FileText, ClipboardCheck, Shield, Briefcase,
   ChevronLeft, ChevronRight, GraduationCap, CalendarClock, ClipboardList, Search, ScrollText, Building2,
 } from 'lucide-react';
+import { useT } from '@/hooks/useT';
+import type { Dict } from '@/locales/fr';
+
+type NavKey = keyof Dict['nav'];
 
 type MenuItem = {
   href: string;
-  label: string;
+  labelKey: NavKey;
   icon: React.ElementType;
   roles: string[];
   statuts?: string[];
 };
 
 const allMenuItems: MenuItem[] = [
-  { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
-  { href: '/dashboard/retraite', label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['RETRAITE'] },
-  { href: '/dashboard/ancien',  label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ANCIEN'] },
-  { href: '/dashboard/associe',   label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ASSOCIE'] },
-  { href: '/dashboard/doctorant', label: 'Mon espace', icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['DOCTORANT'] },
-  { href: '/dashboard/profil', label: 'Mon profil', icon: Users, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
-  { href: '/dashboard/recherche', label: 'Recherche', icon: Search, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
-  { href: '/dashboard/membres', label: 'Membres', icon: Users, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE'] },
-  { href: '/dashboard/equipes', label: 'Équipes', icon: GraduationCap, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
-  { href: '/dashboard/publications', label: 'Publications', icon: BookOpen, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
-  { href: '/dashboard/evenements', label: 'Événements', icon: Calendar, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
-  { href: '/dashboard/calendrier', label: 'Calendrier', icon: CalendarClock, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
-  { href: '/dashboard/reunions', label: 'Réunions', icon: Briefcase, roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/documents', label: 'Documents', icon: FolderOpen, roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/mes-documents', label: 'Mes documents', icon: FolderOpen, roles: ['MEMBRE'], statuts: ['DOCTORANT', 'ASSOCIE', 'PERMANENT'] },
-  { href: '/dashboard/conventions', label: 'Conventions', icon: Handshake, roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/messages', label: 'Messagerie', icon: MessageCircle, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
-  { href: '/dashboard/demandes-materiel', label: 'Demandes matériel', icon: ClipboardList, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
-  { href: '/dashboard/laboratoire', label: 'Laboratoire', icon: Building2, roles: ['DIRECTEUR'] },
-  { href: '/dashboard/documents-approbation', label: 'Approbation documents', icon: ClipboardCheck, roles: ['DIRECTEUR'] },
-  { href: '/dashboard/materiel', label: 'Matériel', icon: Box, roles: ['ADMIN', 'DIRECTEUR'] },
-  { href: '/dashboard/demandes-adhesion', label: 'Adhésions', icon: ClipboardCheck, roles: ['DIRECTEUR'] },
-  { href: '/dashboard/rapport-annuel', label: 'Rapport annuel', icon: FileText, roles: ['DIRECTEUR'] },
-  { href: '/dashboard/statistiques', label: 'Statistiques', icon: BarChart3, roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
-  { href: '/dashboard/admin/comptes', label: 'Comptes', icon: Users, roles: ['ADMIN'] },
-  { href: '/dashboard/mandats', label: 'Mandats', icon: Shield, roles: ['ADMIN'] },
-  { href: '/dashboard/audit-logs', label: 'Journal d\'audit', icon: ScrollText, roles: ['ADMIN'] },
-  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard',                      labelKey: 'dashboard',     icon: LayoutDashboard, roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/retraite',             labelKey: 'mySpace',       icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['RETRAITE'] },
+  { href: '/dashboard/ancien',               labelKey: 'mySpace',       icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ANCIEN'] },
+  { href: '/dashboard/associe',              labelKey: 'mySpace',       icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['ASSOCIE'] },
+  { href: '/dashboard/doctorant',            labelKey: 'mySpace',       icon: LayoutDashboard, roles: ['MEMBRE'], statuts: ['DOCTORANT'] },
+  { href: '/dashboard/profil',               labelKey: 'profile',       icon: Users,           roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/recherche',            labelKey: 'search',        icon: Search,          roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/membres',              labelKey: 'members',       icon: Users,           roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE'] },
+  { href: '/dashboard/equipes',              labelKey: 'teams',         icon: GraduationCap,   roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
+  { href: '/dashboard/publications',         labelKey: 'publications',  icon: BookOpen,        roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/evenements',           labelKey: 'events',        icon: Calendar,        roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/calendrier',           labelKey: 'calendar',      icon: CalendarClock,   roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
+  { href: '/dashboard/reunions',             labelKey: 'meetings',      icon: Briefcase,       roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/documents',            labelKey: 'documents',     icon: FolderOpen,      roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/mes-documents',        labelKey: 'myDocuments',   icon: FolderOpen,      roles: ['MEMBRE'], statuts: ['DOCTORANT', 'ASSOCIE', 'PERMANENT'] },
+  { href: '/dashboard/conventions',          labelKey: 'conventions',   icon: Handshake,       roles: ['DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/messages',             labelKey: 'messaging',     icon: MessageCircle,   roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'] },
+  { href: '/dashboard/demandes-materiel',    labelKey: 'equipmentReqs', icon: ClipboardList,   roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT'] },
+  { href: '/dashboard/laboratoire',          labelKey: 'laboratory',    icon: Building2,       roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/documents-approbation',labelKey: 'docApproval',   icon: ClipboardCheck,  roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/materiel',             labelKey: 'equipment',     icon: Box,             roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/demandes-adhesion',    labelKey: 'memberships',   icon: ClipboardCheck,  roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/rapport-annuel',       labelKey: 'annualReport',  icon: FileText,        roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/statistiques',         labelKey: 'statistics',    icon: BarChart3,       roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/admin/comptes',        labelKey: 'accounts',      icon: Users,           roles: ['ADMIN', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/mandats',              labelKey: 'mandates',      icon: Shield,          roles: ['ADMIN'] },
+  { href: '/dashboard/audit-logs',           labelKey: 'auditLog',      icon: ScrollText,      roles: ['ADMIN'] },
+  { href: '/dashboard/notifications',        labelKey: 'notifications', icon: Bell,            roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
 ];
 
 type SidebarProps = {
@@ -68,6 +72,7 @@ function NavContent({
 }) {
   const pathname = usePathname();
   const { role, statut } = useAuthStore();
+  const t = useT();
 
   const isAdmin =
     role === RoleSysteme.ADMIN ||
@@ -93,7 +98,7 @@ function NavContent({
           <button
             onClick={onToggle}
             className="rounded-lg p-1.5 text-white/70 hover:bg-white/10 hover:text-white transition-colors ml-auto"
-            aria-label="Réduire le menu"
+            aria-label={t.sidebar.collapse}
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -117,7 +122,7 @@ function NavContent({
         </div>
       )}
 
-      {/* Nav links — scrollable sans scrollbar visible */}
+      {/* Nav links */}
       <nav className="flex-1 overflow-y-auto py-3 scrollbar-hide">
         {filteredItems.map((item) => {
           const isActive =
@@ -129,7 +134,7 @@ function NavContent({
               key={item.href}
               href={item.href}
               onClick={onLinkClick}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? t.nav[item.labelKey] : undefined}
               className={cn(
                 'group flex items-center gap-3 px-3 mx-2 py-2.5 rounded-lg text-sm transition-all duration-150',
                 isActive
@@ -141,7 +146,7 @@ function NavContent({
                 size={18}
                 className={cn('shrink-0 transition-transform group-hover:scale-105', isActive && 'text-white')}
               />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              {!collapsed && <span className="truncate">{t.nav[item.labelKey]}</span>}
               {!collapsed && isActive && (
                 <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-primary-300" />
               )}
@@ -154,9 +159,10 @@ function NavContent({
 }
 
 export function Sidebar({ collapsed, onToggle, mobileOpen, onCloseMobile }: SidebarProps) {
+  const t = useT();
   return (
     <>
-      {/* ── Desktop sidebar (caché sur mobile) ── */}
+      {/* Desktop sidebar */}
       <aside
         className={cn(
           'hidden md:flex flex-col h-screen',
@@ -168,23 +174,19 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onCloseMobile }: Side
         <NavContent collapsed={collapsed} onToggle={onToggle} />
       </aside>
 
-      {/* ── Mobile : backdrop + drawer (visible uniquement sur mobile) ── */}
+      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden">
-          {/* Backdrop */}
           <div
             className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-
-          {/* Drawer */}
           <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-primary-800 text-white animate-slide-in-left">
-            {/* Bouton fermer */}
             <button
               onClick={onCloseMobile}
               className="absolute right-3 top-3 rounded-lg p-1.5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-              aria-label="Fermer le menu"
+              aria-label={t.sidebar.close}
             >
               <X size={18} />
             </button>

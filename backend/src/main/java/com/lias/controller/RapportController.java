@@ -24,7 +24,7 @@ public class RapportController {
     }
 
     @PostMapping("/generer")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<RapportAnnuelDTO> genererRapport(@RequestParam Integer annee,
                                                             @AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(rapportService.genererRapport(annee, user.getMembreId()));
@@ -36,7 +36,7 @@ public class RapportController {
     }
 
     @GetMapping("/{id}/export-pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<byte[]> exportPdf(@PathVariable Long id) {
         byte[] pdf = rapportService.exportRapportPDF(id);
         return ResponseEntity.ok()

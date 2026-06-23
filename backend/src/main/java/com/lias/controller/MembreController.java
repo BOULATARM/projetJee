@@ -44,7 +44,8 @@ public class MembreController {
                 currentUser.getMembreId().equals(id) ||
                 currentUser.getAuthorities().stream().anyMatch(a ->
                         a.getAuthority().equals("ROLE_ADMIN") ||
-                        a.getAuthority().equals("ROLE_DIRECTEUR"))
+                        a.getAuthority().equals("ROLE_DIRECTEUR") ||
+                        a.getAuthority().equals("ROLE_VICE_DIRECTEUR"))
         );
         if (!canSeeBirthdate) {
             dto.setDateNaissance(null);
@@ -63,28 +64,28 @@ public class MembreController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR') or #id == authentication.principal.membreId")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR') or #id == authentication.principal.membreId")
     public ResponseEntity<MembreResponseDTO> updateMembre(@PathVariable Long id,
                                                            @Valid @RequestBody MembreRequestDTO dto) {
         return ResponseEntity.ok(membreService.updateProfil(id, dto));
     }
 
     @PutMapping("/{id}/statut")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> changeStatut(@PathVariable Long id, @RequestParam StatutMembre statut) {
         membreService.changeStatut(id, statut);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> deleteMembre(@PathVariable Long id) {
         membreService.desactiverCompte(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/password")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR') or #id == authentication.principal.membreId")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR') or #id == authentication.principal.membreId")
     public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestParam String newPassword) {
         com.lias.entity.Membre membre = membreRepository.findById(id)
                 .orElseThrow(() -> new com.lias.exception.ResourceNotFoundException("Membre", "id", id));
@@ -94,14 +95,14 @@ public class MembreController {
     }
 
     @PutMapping("/{id}/equipe")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR') or #id == authentication.principal.membreId")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR') or #id == authentication.principal.membreId")
     public ResponseEntity<Void> changerEquipe(@PathVariable Long id, @RequestParam Long equipeId) {
         membreService.changerEquipe(id, equipeId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/photo")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR') or #id == authentication.principal.membreId")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR') or #id == authentication.principal.membreId")
     public ResponseEntity<MembreResponseDTO> uploadPhoto(@PathVariable Long id,
                                                           @RequestParam("file") MultipartFile file) {
         String photoPath = fileStorageService.uploadFile(file, "images");
@@ -112,7 +113,7 @@ public class MembreController {
 
     /** Historique des actions sur le compte (bloc/débloc/statut/rôle) */
     @GetMapping("/{id}/historique")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR') or #id == authentication.principal.membreId")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR') or #id == authentication.principal.membreId")
     public ResponseEntity<List<AuditLog>> getHistorique(@PathVariable Long id) {
         return ResponseEntity.ok(auditLogService.getByMembreId(id));
     }

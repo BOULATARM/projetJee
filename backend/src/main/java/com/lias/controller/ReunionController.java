@@ -42,7 +42,7 @@ public class ReunionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<ReunionResponseDTO> createReunion(@Valid @RequestBody ReunionRequestDTO dto,
                                                              @AuthenticationPrincipal UserPrincipal user) {
         Reunion created = reunionService.creerReunion(dto, user.getMembreId());
@@ -69,14 +69,14 @@ public class ReunionController {
     }
 
     @PostMapping("/{id}/participants/{membreId}")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> ajouterParticipant(@PathVariable Long id, @PathVariable Long membreId) {
         reunionService.ajouterParticipant(id, membreId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}/participants/{membreId}")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> retirerParticipant(@PathVariable Long id, @PathVariable Long membreId) {
         reunionService.retirerParticipant(id, membreId);
         return ResponseEntity.ok().build();
@@ -91,7 +91,7 @@ public class ReunionController {
     }
 
     @PostMapping("/{id}/pv")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> uploadPV(@PathVariable Long id,
                                           @RequestParam("file") MultipartFile file,
                                           @AuthenticationPrincipal UserPrincipal user) {

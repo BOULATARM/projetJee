@@ -27,7 +27,7 @@ public class DemandeMaterielController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<DemandeMateriel>> getAllDemandes() {
         return ResponseEntity.ok(demandeMaterielService.getAllDemandes());
     }
@@ -39,7 +39,7 @@ public class DemandeMaterielController {
     }
 
     @PutMapping("/{id}/valider")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> validerDemande(@PathVariable Long id,
                                                 @AuthenticationPrincipal UserPrincipal user) {
         demandeMaterielService.validerDemande(id, user.getMembreId());
@@ -47,7 +47,7 @@ public class DemandeMaterielController {
     }
 
     @PutMapping("/{id}/refuser")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> refuserDemande(@PathVariable Long id,
                                                 @AuthenticationPrincipal UserPrincipal user) {
         demandeMaterielService.refuserDemande(id, user.getMembreId());

@@ -48,19 +48,19 @@ public class DemandeAdhesionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<DemandeAdhesion>> getAllDemandes() {
         return ResponseEntity.ok(demandeAdhesionService.getAllDemandes());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<DemandeAdhesion> getDemandeById(@PathVariable Long id) {
         return ResponseEntity.ok(demandeAdhesionService.getDemandeById(id));
     }
 
     @PutMapping("/{id}/accepter")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> accepterDemande(@PathVariable Long id,
                                                  @RequestParam Long equipeId,
                                                  @AuthenticationPrincipal UserPrincipal user) {
@@ -69,7 +69,7 @@ public class DemandeAdhesionController {
     }
 
     @PutMapping("/{id}/refuser")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> refuserDemande(@PathVariable Long id,
                                                 @AuthenticationPrincipal UserPrincipal user,
                                                 @RequestParam(required = false) String commentaire) {
@@ -90,7 +90,7 @@ public class DemandeAdhesionController {
     }
 
     @GetMapping("/{id}/cv")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Resource> downloadCV(@PathVariable Long id) {
         Resource resource = demandeAdhesionService.downloadCV(id);
         return ResponseEntity.ok()

@@ -47,13 +47,13 @@ public class LaboratoireController {
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Laboratoire> modifierLaboratoire(@Valid @RequestBody LaboratoireRequestDTO dto) {
         return ResponseEntity.ok(laboratoireService.modifierLaboratoire(dto));
     }
 
     @GetMapping("/historique")
-    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<HistoriqueDTO>> getHistorique() {
         List<AuditLog> logs = auditLogService.getByEntite("Laboratoire");
 

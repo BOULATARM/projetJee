@@ -7,6 +7,9 @@ import { notificationService } from '@/services/notification.service';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { LangToggle } from '@/components/ui/LangToggle';
+import { useT } from '@/hooks/useT';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -15,6 +18,7 @@ interface HeaderProps {
 export function Header({ onMenuToggle }: HeaderProps) {
   const { nom, prenom, role, photo, logout } = useAuthStore();
   const router = useRouter();
+  const t = useT();
   const [notifCount, setNotifCount] = useState(0);
 
   const fetchNotifCount = useCallback(async () => {
@@ -26,13 +30,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
   useEffect(() => {
     fetchNotifCount();
-
-    // Poll toutes les 30 secondes
     const interval = setInterval(fetchNotifCount, 30_000);
-
-    // Mise à jour immédiate quand une notification est lue depuis la page notifications
     window.addEventListener('notif-lue', fetchNotifCount);
-
     return () => {
       clearInterval(interval);
       window.removeEventListener('notif-lue', fetchNotifCount);
@@ -47,19 +46,18 @@ export function Header({ onMenuToggle }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:px-6">
       <div className="flex items-center gap-3">
-        {/* Hamburger — mobile seulement */}
         {onMenuToggle && (
           <button
             onClick={onMenuToggle}
-            className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition-colors md:hidden"
-            aria-label="Ouvrir le menu"
+            className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 transition-colors md:hidden"
+            aria-label={t.header.openMenu}
           >
             <Menu size={20} />
           </button>
         )}
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-stone-800 hidden sm:block">
+          <span className="text-sm font-semibold text-stone-800 dark:text-stone-100 hidden sm:block">
             {prenom} {nom}
           </span>
           {role && (
@@ -71,13 +69,19 @@ export function Header({ onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Cloche avec badge dynamique */}
+        <ThemeToggle />
+        <LangToggle />
+
         <Link
           href="/dashboard/notifications"
           className={cn(
-            'relative rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition-colors',
+            'relative rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100 transition-colors',
           )}
-          aria-label={notifCount > 0 ? `${notifCount} notification${notifCount > 1 ? 's' : ''} non lue${notifCount > 1 ? 's' : ''}` : 'Notifications'}
+          aria-label={
+            notifCount > 0
+              ? `${notifCount} ${t.header.notifications.toLowerCase()}${notifCount > 1 ? 's' : ''}`
+              : t.header.notifications
+          }
         >
           <Bell size={19} />
           {notifCount > 0 && (
@@ -90,15 +94,16 @@ export function Header({ onMenuToggle }: HeaderProps) {
         <Link
           href="/dashboard/profil"
           className="rounded-lg p-1 hover:opacity-80 transition-opacity"
-          aria-label="Mon profil"
+          aria-label={t.header.myProfile}
         >
           <Avatar photo={photo} nom={nom} prenom={prenom} size={32} />
         </Link>
 
         <button
           onClick={handleLogout}
-          className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-danger transition-colors"
-          aria-label="Se déconnecter"
+          className="rounded-lg p-2 text-stone-500 hover:bg-stone-100 hover:text-danger dark:text-stone-400 dark:hover:bg-stone-800 transition-colors"
+          aria-label={t.header.logout}
+          title={t.header.logout}
         >
           <LogOut size={19} />
         </button>

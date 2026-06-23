@@ -35,13 +35,13 @@ public class EvenementController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<EvenementResponseDTO> createEvenement(@Valid @RequestBody EvenementRequestDTO dto) {
         return ResponseEntity.ok(evenementService.creerEvenement(dto));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<EvenementResponseDTO> updateEvenement(@PathVariable Long id,
                                                                  @Valid @RequestBody EvenementRequestDTO dto) {
         return ResponseEntity.ok(evenementService.updateEvenement(id, dto));
@@ -49,7 +49,7 @@ public class EvenementController {
 
     // Fix : param "role" (était "roleOrganisation" côté frontend → mismatch)
     @PostMapping("/{id}/organisateurs")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> ajouterOrganisateur(@PathVariable Long id,
                                                      @RequestParam Long membreId,
                                                      @RequestParam(required = false, defaultValue = "") String role) {
@@ -58,7 +58,7 @@ public class EvenementController {
     }
 
     @PutMapping("/{id}/statut")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> changerStatut(@PathVariable Long id, @RequestParam StatutEvenement statut) {
         evenementService.changerStatut(id, statut);
         return ResponseEntity.ok().build();
@@ -72,7 +72,7 @@ public class EvenementController {
     }
 
     @PutMapping("/{id}/annuler")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> annulerEvenement(@PathVariable Long id) {
         evenementService.annulerEvenement(id);
         return ResponseEntity.ok().build();
@@ -94,14 +94,14 @@ public class EvenementController {
     }
 
     @PutMapping("/{id}/participations/{membreId}/confirmer")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> confirmerParticipation(@PathVariable Long id, @PathVariable Long membreId) {
         evenementService.confirmerParticipation(id, membreId);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/participations/{membreId}/refuser")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> refuserParticipation(@PathVariable Long id, @PathVariable Long membreId) {
         evenementService.refuserParticipation(id, membreId);
         return ResponseEntity.ok().build();

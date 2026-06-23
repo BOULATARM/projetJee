@@ -53,14 +53,14 @@ public class DemandeDocumentController {
 
     /** Directeur consulte toutes les demandes */
     @GetMapping
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<List<DemandeDocument>> getAll() {
         return ResponseEntity.ok(repository.findAllByOrderByDateCreationDesc());
     }
 
     /** Directeur accepte une demande */
     @PutMapping("/{id}/accepter")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<DemandeDocument> accepter(
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal user) {
@@ -76,7 +76,7 @@ public class DemandeDocumentController {
 
     /** Directeur refuse une demande */
     @PutMapping("/{id}/refuser")
-    @PreAuthorize("hasRole('DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<DemandeDocument> refuser(
             @PathVariable Long id,
             @RequestParam(required = false) String motif,

@@ -37,7 +37,7 @@ public class EquipeController {
 
     private boolean canManageEquipe(Long equipeId, UserPrincipal user) {
         boolean isPrivileged = user.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_DIRECTEUR") || a.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_DIRECTEUR") || a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_VICE_DIRECTEUR"));
         return isPrivileged || isChefOfEquipe(equipeId, user.getMembreId());
     }
 
@@ -64,7 +64,7 @@ public class EquipeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR')")
     public ResponseEntity<Equipe> createEquipe(@RequestParam String nom,
                                                 @RequestParam(required = false) String description,
                                                 @RequestParam(required = false) Long chefEquipeId) {

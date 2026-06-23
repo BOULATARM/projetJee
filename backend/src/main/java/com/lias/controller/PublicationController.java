@@ -78,14 +78,14 @@ public class PublicationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'CHEF_EQUIPE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE')")
     public ResponseEntity<PublicationResponseDTO> updatePublication(@PathVariable Long id,
                                                                      @Valid @RequestBody PublicationRequestDTO dto) {
         return ResponseEntity.ok(publicationService.updatePublication(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VICE_DIRECTEUR')")
     public ResponseEntity<Void> deletePublication(@PathVariable Long id) {
         publicationService.deletePublication(id);
         return ResponseEntity.ok().build();
