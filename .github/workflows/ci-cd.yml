@@ -470,7 +470,7 @@ jobs:
   notify:
     name: "Notify Deployment Result"
     runs-on: ubuntu-latest
-    needs: [pentest-dast]
+    needs: [sast, build-test, docker-build-scan, terraform, deploy, pentest-dast]
     if: always() && github.ref == 'refs/heads/main'
 
     steps:
