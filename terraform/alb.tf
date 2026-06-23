@@ -108,3 +108,16 @@ resource "aws_lb_listener_rule" "api" {
     path_pattern { values = ["/api/*"] }
   }
 }
+
+# Route /uploads/* to backend (Spring Boot serves static files)
+resource "aws_lb_listener_rule" "uploads" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 9
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend.arn
+  }
+  condition {
+    path_pattern { values = ["/uploads/*"] }
+  }
+}
