@@ -44,7 +44,7 @@ const allMenuItems: MenuItem[] = [
   { href: '/dashboard/demandes-adhesion',    labelKey: 'memberships',   icon: ClipboardCheck,  roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
   { href: '/dashboard/rapport-annuel',       labelKey: 'annualReport',  icon: FileText,        roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
   { href: '/dashboard/statistiques',         labelKey: 'statistics',    icon: BarChart3,       roles: ['DIRECTEUR', 'VICE_DIRECTEUR'] },
-  { href: '/dashboard/admin/comptes',        labelKey: 'accounts',      icon: Users,           roles: ['ADMIN', 'VICE_DIRECTEUR'] },
+  { href: '/dashboard/admin/comptes',        labelKey: 'accounts',      icon: Users,           roles: ['ADMIN'] },
   { href: '/dashboard/mandats',              labelKey: 'mandates',      icon: Shield,          roles: ['ADMIN'] },
   { href: '/dashboard/audit-logs',           labelKey: 'auditLog',      icon: ScrollText,      roles: ['ADMIN'] },
   { href: '/dashboard/notifications',        labelKey: 'notifications', icon: Bell,            roles: ['ADMIN', 'DIRECTEUR', 'VICE_DIRECTEUR', 'CHEF_EQUIPE', 'MEMBRE'], statuts: ['PERMANENT', 'ASSOCIE', 'DOCTORANT'] },
