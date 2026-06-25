@@ -13,7 +13,7 @@ export default function DemandesMaterielPage() {
   const { role } = useAuthStore();
   const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isAdmin = role === RoleSysteme.ADMIN;
-  const canRequest = !isDirecteur;
+  const canRequest = true; // tous peuvent soumettre une demande, y compris DIRECTEUR/VICE_DIRECTEUR
 
   const [demandes, setDemandes] = useState<DemandeMateriel[]>([]);
   const [materiels, setMateriels] = useState<Materiel[]>([]);
