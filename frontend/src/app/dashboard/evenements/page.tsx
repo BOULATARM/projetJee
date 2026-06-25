@@ -23,7 +23,7 @@ export default function EvenementsPage() {
   const [error, setError] = useState('');
   const { role } = useAuthStore();
 
-  const canCreate = role === RoleSysteme.DIRECTEUR;
+  const canCreate = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
 
   const load = () => evenementService.getAll().then(setEvenements).catch(() => {});
 

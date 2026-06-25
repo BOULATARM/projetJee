@@ -32,7 +32,7 @@ export default function EquipeDetailPage() {
   const [filtreNom, setFiltreNom] = useState('');
   const { role, membreId: currentMembreId } = useAuthStore();
   const isChefOfThisEquipe = equipe?.chefEquipe?.id === currentMembreId;
-  const canManage = role === RoleSysteme.DIRECTEUR || isChefOfThisEquipe;
+  const canManage = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR || isChefOfThisEquipe;
 
   const load = async () => {
     if (!id) return;

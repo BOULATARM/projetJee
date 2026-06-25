@@ -22,10 +22,10 @@ export default function EquipesPage() {
   const [form, setForm] = useState({ nom: '', description: '', axeRecherche: '', dateCreation: '', chefEquipeId: '' });
   const [saving, setSaving] = useState(false);
   const { role, membreId: currentMembreId } = useAuthStore();
-  const canCreate = role === RoleSysteme.DIRECTEUR;
+  const canCreate = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isReadOnly = role === RoleSysteme.ADMIN;
   const canDeleteEquipe = (eq: Equipe) =>
-    !isReadOnly && (role === RoleSysteme.DIRECTEUR || eq.chefEquipe?.id === currentMembreId);
+    !isReadOnly && (role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR || eq.chefEquipe?.id === currentMembreId);
   const handleDelete = async (id: number, nom: string) => {
     if (!confirm(`Supprimer l'équipe "${nom}" ? Cette action est irréversible.`)) return;
     try {

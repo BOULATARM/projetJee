@@ -17,7 +17,7 @@ const TYPE_BADGE: Record<TypeMateriel, string> = {
 export default function MaterielPage() {
   const { role } = useAuthStore();
   const isAdmin = role === RoleSysteme.ADMIN;
-  const isDirecteur = role === RoleSysteme.DIRECTEUR;
+  const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
 
   const [materiels, setMateriels] = useState<Materiel[]>([]);
   const [historique, setHistorique] = useState<DistributionMateriel[]>([]);

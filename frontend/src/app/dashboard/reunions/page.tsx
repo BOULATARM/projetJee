@@ -14,7 +14,7 @@ import { toArray } from '@/lib/normalize';
 
 export default function ReunionsPage() {
   const { role } = useAuthStore();
-  const isDirecteur = role === RoleSysteme.DIRECTEUR;
+  const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
 
   const [reunions, setReunions] = useState<Reunion[]>([]);
   const [membres, setMembres] = useState<MembreResponse[]>([]);

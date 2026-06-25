@@ -28,7 +28,7 @@ const STATUT_LABEL: Record<string, string> = {
 
 export default function DocumentsPage() {
   const { role } = useAuthStore();
-  const isDirecteur = role === RoleSysteme.DIRECTEUR;
+  const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isAdmin = role === RoleSysteme.ADMIN;
   const isPrivileged = isDirecteur || isAdmin;
 

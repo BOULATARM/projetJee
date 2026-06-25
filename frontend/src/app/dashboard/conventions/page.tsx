@@ -72,7 +72,7 @@ export default function ConventionsPage() {
     <div>
       <h1 className="text-2xl font-heading font-bold text-gray-800 mb-6">Conventions et collaborations</h1>
 
-      {role === RoleSysteme.DIRECTEUR && (
+      {(role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR) && (
       <Card className="mb-6">
         <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-3">
           <input required value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} placeholder="Titre *" className="border rounded-lg px-3 py-2" />

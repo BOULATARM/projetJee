@@ -28,7 +28,7 @@ export default function DemandesAdhesionPage() {
   const [selectedEquipeId, setSelectedEquipeId] = useState<string>('');
   const [accepting, setAccepting] = useState(false);
 
-  const canDecide = role === RoleSysteme.DIRECTEUR;
+  const canDecide = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
 
   useEffect(() => {
     api.get('/equipes').then(r => setEquipes(toArray(r.data))).catch(() => {});

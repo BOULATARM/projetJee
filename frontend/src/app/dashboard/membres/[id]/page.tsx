@@ -24,11 +24,11 @@ export default function MembreDetailPage() {
     id: number; action: string; details: string; date: string; utilisateur: string;
   }>>([]);
   const { role, membreId: currentMembreId } = useAuthStore();
-  const canManage = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR;
+  const canManage = role === RoleSysteme.ADMIN || role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isSelf = currentMembreId === Number(id);
   const canSeeConfidentiel = isSelf || canManage;
   // L'admin ne peut pas modifier les données personnelles d'un autre membre
-  const canEditPersonal = isSelf || (role === RoleSysteme.DIRECTEUR && !isSelf);
+  const canEditPersonal = isSelf || ((role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR) && !isSelf);
 
   useEffect(() => {
     if (id) {

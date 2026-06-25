@@ -11,7 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 
 export default function DemandesMaterielPage() {
   const { role } = useAuthStore();
-  const isDirecteur = role === RoleSysteme.DIRECTEUR;
+  const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isAdmin = role === RoleSysteme.ADMIN;
   const canRequest = !isDirecteur;
 

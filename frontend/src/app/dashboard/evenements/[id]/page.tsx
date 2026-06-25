@@ -38,8 +38,8 @@ export default function EvenementDetailPage() {
   const [myParticipation, setMyParticipation] = useState<ParticipationDTO | null>(null);
   const [participating, setParticipating] = useState(false);
   const { role, statut: myStatutMembre, membreId: myMembreId } = useAuthStore();
-  const isDirecteur = role === RoleSysteme.DIRECTEUR;
-  const canManage = role === RoleSysteme.DIRECTEUR;
+  const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
+  const canManage = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isBloque = myStatutMembre ? STATUTS_BLOQUES.includes(myStatutMembre) : false;
 
   const [annule, setAnnule] = useState(false);

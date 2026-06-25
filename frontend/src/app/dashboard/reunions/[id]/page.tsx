@@ -25,7 +25,7 @@ export default function ReunionDetailPage() {
   const [uploadingPV, setUploadingPV] = useState(false);
   const [addMembreId, setAddMembreId] = useState('');
   const { role } = useAuthStore();
-  const canManage = role === RoleSysteme.DIRECTEUR;
+  const canManage = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
 
   const load = async () => {
     if (!id) return;
