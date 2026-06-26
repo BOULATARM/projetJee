@@ -31,6 +31,11 @@ public class EquipeHistorique {
     @JsonIgnoreProperties({"affiliations", "roles", "documentsUploades", "demandesAdhesion", "demandesMateriel"})
     private Membre membre;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "performed_by_id")
+    @JsonIgnoreProperties({"affiliations", "roles", "documentsUploades", "demandesAdhesion", "demandesMateriel"})
+    private Membre performedBy;
+
     @Enumerated(EnumType.STRING)
     private ActionEquipe action;
 

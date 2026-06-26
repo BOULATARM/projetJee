@@ -283,6 +283,7 @@ export default function EquipeDetailPage() {
                 <thead>
                   <tr className="text-left text-xs text-gray-500 border-b">
                     <th className="pb-2 pr-4">Membre</th>
+                    <th className="pb-2 pr-4">Par</th>
                     <th className="pb-2 pr-4">Date</th>
                     <th className="pb-2">Action</th>
                   </tr>
@@ -301,6 +302,16 @@ export default function EquipeDetailPage() {
                             <Avatar photo={h.membre.photo} nom={h.membre.nom} prenom={h.membre.prenom} size={28} />
                             <span className="font-medium">{h.membre.prenom} {h.membre.nom}</span>
                           </Link>
+                        </td>
+                        <td className="py-2 pr-4">
+                          {h.performedBy ? (
+                            <Link href={`/dashboard/membres/${h.performedBy.id}`} className="flex items-center gap-2 hover:text-primary">
+                              <Avatar photo={h.performedBy.photo} nom={h.performedBy.nom} prenom={h.performedBy.prenom} size={28} />
+                              <span className="font-medium">{h.performedBy.prenom} {h.performedBy.nom}</span>
+                            </Link>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
                         </td>
                         <td className="py-2 pr-4 text-gray-500 text-sm whitespace-nowrap">
                           {new Date(h.date).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

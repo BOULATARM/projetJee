@@ -11,11 +11,11 @@ public interface EquipeService {
     Equipe creerEquipe(String nom, String description, Long chefEquipeId);
     Equipe creerEquipeComplet(com.lias.dto.request.EquipeRequestDTO dto);
     Equipe updateEquipe(Long id, String nom, String description);
-    void affecterMembre(Long membreId, Long equipeId, LocalDate dateDebut);
-    void retirerMembre(Long membreId, Long equipeId, LocalDate dateFin);
+    void affecterMembre(Long membreId, Long equipeId, LocalDate dateDebut, Long performedById);
+    void retirerMembre(Long membreId, Long equipeId, LocalDate dateFin, Long performedById);
     List<AffiliationMembre> getHistoriqueAffiliations(Long membreId);
     List<AffiliationMembre> getAffiliationsByEquipe(Long equipeId);
     List<com.lias.dto.response.MembreResponseDTO> getMembresActifs(Long equipeId);
-    Equipe changerChefEquipe(Long equipeId, Long newChefId);
+    Equipe changerChefEquipe(Long equipeId, Long newChefId, Long performedById);
     void supprimerEquipe(Long id);
 }

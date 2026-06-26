@@ -121,6 +121,7 @@ export interface EquipeAffiliation {
 export interface EquipeHistoriqueEntry {
   id: number;
   membre: { id: number; nom: string; prenom: string; photo?: string };
+  performedBy?: { id: number; nom: string; prenom: string; photo?: string };
   action: 'MEMBRE_AJOUTE' | 'MEMBRE_RETIRE' | 'CHEF_NOMME';
   date: string;
   details?: string;

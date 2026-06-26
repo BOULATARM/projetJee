@@ -98,7 +98,7 @@ public class EquipeController {
                                                @RequestParam(required = false) LocalDate dateDebut,
                                                @AuthenticationPrincipal UserPrincipal user) {
         if (!canManageEquipe(id, user)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        equipeService.affecterMembre(membreId, id, dateDebut != null ? dateDebut : LocalDate.now());
+        equipeService.affecterMembre(membreId, id, dateDebut != null ? dateDebut : LocalDate.now(), user.getMembreId());
         return ResponseEntity.ok().build();
     }
 
@@ -108,7 +108,7 @@ public class EquipeController {
                                                @RequestParam(required = false) LocalDate dateFin,
                                                @AuthenticationPrincipal UserPrincipal user) {
         if (!canManageEquipe(id, user)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        equipeService.retirerMembre(membreId, id, dateFin != null ? dateFin : LocalDate.now());
+        equipeService.retirerMembre(membreId, id, dateFin != null ? dateFin : LocalDate.now(), user.getMembreId());
         return ResponseEntity.ok().build();
     }
 
@@ -117,7 +117,7 @@ public class EquipeController {
                                                @RequestParam Long chefId,
                                                @AuthenticationPrincipal UserPrincipal user) {
         if (!canManageEquipe(id, user)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        return ResponseEntity.ok(equipeService.changerChefEquipe(id, chefId));
+        return ResponseEntity.ok(equipeService.changerChefEquipe(id, chefId, user.getMembreId()));
     }
 
     @DeleteMapping("/{id}")

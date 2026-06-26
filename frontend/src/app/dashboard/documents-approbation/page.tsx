@@ -27,7 +27,7 @@ export default function DocumentsApprobationPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (role && role !== RoleSysteme.DIRECTEUR) {
+    if (role && role !== RoleSysteme.DIRECTEUR && role !== RoleSysteme.VICE_DIRECTEUR) {
       router.replace('/dashboard');
     }
   }, [role]);

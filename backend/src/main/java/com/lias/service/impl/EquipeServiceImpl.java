@@ -35,13 +35,14 @@ public class EquipeServiceImpl implements EquipeService {
     private final PublicationRepository publicationRepository;
     private final MembreMapper membreMapper;
 
-    private void enregistrerHistorique(Equipe equipe, Membre membre, ActionEquipe action, String details) {
+    private void enregistrerHistorique(Equipe equipe, Membre membre, ActionEquipe action, String details, Membre performedBy) {
         equipeHistoriqueRepository.save(EquipeHistorique.builder()
                 .equipe(equipe)
                 .membre(membre)
                 .action(action)
                 .date(LocalDateTime.now())
                 .details(details)
+                .performedBy(performedBy)
                 .build());
     }
 
@@ -111,11 +112,12 @@ public class EquipeServiceImpl implements EquipeService {
 
     @Override
     @Transactional
-    public void affecterMembre(Long membreId, Long equipeId, LocalDate dateDebut) {
+    public void affecterMembre(Long membreId, Long equipeId, LocalDate dateDebut, Long performedById) {
         Membre membre = membreRepository.findById(membreId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", membreId));
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Equipe", "id", equipeId));
+        Membre performedBy = performedById != null ? membreRepository.findById(performedById).orElse(null) : null;
 
         affiliationRepository.findByMembreIdAndActifTrue(membreId).ifPresent(a -> {
             a.setActif(false);
@@ -130,12 +132,12 @@ public class EquipeServiceImpl implements EquipeService {
                 .actif(true)
                 .build();
         affiliationRepository.save(affiliation);
-        enregistrerHistorique(equipe, membre, ActionEquipe.MEMBRE_AJOUTE, null);
+        enregistrerHistorique(equipe, membre, ActionEquipe.MEMBRE_AJOUTE, null, performedBy);
     }
 
     @Override
     @Transactional
-    public void retirerMembre(Long membreId, Long equipeId, LocalDate dateFin) {
+    public void retirerMembre(Long membreId, Long equipeId, LocalDate dateFin, Long performedById) {
         affiliationRepository.findByMembreIdAndActifTrue(membreId).ifPresent(a -> {
             a.setActif(false);
             a.setDateFin(dateFin);
@@ -143,8 +145,9 @@ public class EquipeServiceImpl implements EquipeService {
         });
         Equipe equipe = equipeRepository.findById(equipeId).orElse(null);
         Membre membre = membreRepository.findById(membreId).orElse(null);
+        Membre performedBy = performedById != null ? membreRepository.findById(performedById).orElse(null) : null;
         if (equipe != null && membre != null) {
-            enregistrerHistorique(equipe, membre, ActionEquipe.MEMBRE_RETIRE, null);
+            enregistrerHistorique(equipe, membre, ActionEquipe.MEMBRE_RETIRE, null, performedBy);
         }
     }
 
@@ -159,7 +162,7 @@ public class EquipeServiceImpl implements EquipeService {
         Equipe equipe = equipeRepository.findById(equipeId).orElse(null);
         Membre membre = membreRepository.findById(membreId).orElse(null);
         if (equipe != null && membre != null) {
-            enregistrerHistorique(equipe, membre, ActionEquipe.MEMBRE_RETIRE, motifDepart);
+            enregistrerHistorique(equipe, membre, ActionEquipe.MEMBRE_RETIRE, motifDepart, null);
         }
     }
 
@@ -175,15 +178,16 @@ public class EquipeServiceImpl implements EquipeService {
 
     @Override
     @Transactional
-    public Equipe changerChefEquipe(Long equipeId, Long newChefId) {
+    public Equipe changerChefEquipe(Long equipeId, Long newChefId, Long performedById) {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Equipe", "id", equipeId));
         Membre chef = membreRepository.findById(newChefId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", newChefId));
+        Membre performedBy = performedById != null ? membreRepository.findById(performedById).orElse(null) : null;
         equipe.setChefEquipe(chef);
         equipe = equipeRepository.save(equipe);
         ajouterChefCommeMembre(chef, equipe);
-        enregistrerHistorique(equipe, chef, ActionEquipe.CHEF_NOMME, null);
+        enregistrerHistorique(equipe, chef, ActionEquipe.CHEF_NOMME, null, performedBy);
         return equipe;
     }
 
