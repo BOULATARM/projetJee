@@ -120,10 +120,17 @@ public class MessageController {
         return ResponseEntity.ok().build();
     }
 
-    // nombre de messages directs non lus
+    // nombre de messages directs non lus (total)
     @GetMapping("/unread-count")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Long> unreadCount(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(messageService.countUnreadDirect(principal.getMembreId()));
+    }
+
+    // non lus par partenaire de conversation { partnerId: count }
+    @GetMapping("/unread-per-partner")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<Long, Long>> unreadPerPartner(@AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(messageService.countUnreadPerPartner(principal.getMembreId()));
     }
 }

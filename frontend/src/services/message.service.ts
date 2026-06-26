@@ -45,4 +45,7 @@ export const messageService = {
 
   unreadCount: (): Promise<number> =>
     api.get(`${BASE}/unread-count`).then(r => r.data),
+
+  unreadPerPartner: (): Promise<Record<number, number>> =>
+    api.get(`${BASE}/unread-per-partner`).then(r => r.data),
 };

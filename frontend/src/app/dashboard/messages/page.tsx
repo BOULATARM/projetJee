@@ -83,6 +83,7 @@ export default function MessagesPage() {
   const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [evenements, setEvenements] = useState<EvenementItem[]>([]);
   const [conversations, setConversations] = useState<MembreResponse[]>([]);
+  const [unreadMap, setUnreadMap] = useState<Record<number, number>>({});
 
   const [selectedEquipeId, setSelectedEquipeId] = useState<number | null>(null);
   const [selectedEvenementId, setSelectedEvenementId] = useState<number | null>(null);
@@ -112,6 +113,7 @@ export default function MessagesPage() {
     api.get('/equipes/mes-equipes').then(r => setEquipes(r.data)).catch(() => {});
     messageService.getConversations().then(setConversations).catch(() => {});
     messageService.getMesEvenements().then(setEvenements).catch(() => {});
+    messageService.unreadPerPartner().then(setUnreadMap).catch(() => {});
   }, []);
 
   const loadMessages = useCallback(async () => {
@@ -123,7 +125,9 @@ export default function MessagesPage() {
       } else if (tab === 'direct' && selectedMembre) {
         const msgs = await messageService.getDirect(selectedMembre.id);
         setMessages(msgs);
-        messageService.markRead(selectedMembre.id).catch(() => {});
+        messageService.markRead(selectedMembre.id).then(() => {
+          setUnreadMap(prev => ({ ...prev, [selectedMembre.id]: 0 }));
+        }).catch(() => {});
       } else if (tab === 'event' && selectedEvenementId) {
         setMessages(await messageService.getEventMessages(selectedEvenementId));
       } else {
@@ -343,16 +347,25 @@ export default function MessagesPage() {
             {conversations.length === 0 && (
               <p className="px-4 py-3 text-xs text-gray-400">Aucune conversation</p>
             )}
-            {conversations.map(m => (
-              <button key={m.id}
-                onClick={() => { setTab('direct'); setSelectedMembre(m); setSelectedEquipeId(null); setSelectedEvenementId(null); }}
-                className={`w-full text-left px-3 py-2.5 text-sm transition flex items-center gap-2
-                  ${tab === 'direct' && selectedMembre?.id === m.id ? 'bg-primary text-white' : 'hover:bg-gray-50 text-gray-700'}`}
-              >
-                <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={28} />
-                <span className="truncate">{m.prenom} {m.nom}</span>
-              </button>
-            ))}
+            {conversations.map(m => {
+              const unread = unreadMap[m.id] ?? 0;
+              const isSelected = tab === 'direct' && selectedMembre?.id === m.id;
+              return (
+                <button key={m.id}
+                  onClick={() => { setTab('direct'); setSelectedMembre(m); setSelectedEquipeId(null); setSelectedEvenementId(null); }}
+                  className={`w-full text-left px-3 py-2.5 text-sm transition flex items-center gap-2
+                    ${isSelected ? 'bg-primary text-white' : 'hover:bg-gray-50 text-gray-700'}`}
+                >
+                  <Avatar photo={m.photo} nom={m.nom} prenom={m.prenom} size={28} />
+                  <span className="truncate flex-1">{m.prenom} {m.nom}</span>
+                  {unread > 0 && !isSelected && (
+                    <span className="ml-auto shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

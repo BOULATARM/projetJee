@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -107,6 +109,14 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public long countUnreadDirect(Long meId) {
         return messageRepository.countByRecipientIdAndLueFalseAndType(meId, MessageType.DIRECT);
+    }
+
+    @Override
+    public Map<Long, Long> countUnreadPerPartner(Long meId) {
+        Map<Long, Long> result = new HashMap<>();
+        messageRepository.countUnreadPerSender(meId)
+                .forEach(row -> result.put((Long) row[0], (Long) row[1]));
+        return result;
     }
 
     private MessageDTO toDTO(Message m) {

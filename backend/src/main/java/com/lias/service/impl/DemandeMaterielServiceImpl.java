@@ -110,6 +110,10 @@ public class DemandeMaterielServiceImpl implements DemandeMaterielService {
             }
         }
 
+        if (demande.getMembre().getId().equals(traiteParId)) {
+            throw new RuntimeException("Vous ne pouvez pas valider votre propre demande.");
+        }
+
         demande.setStatut(StatutDemande.ACCEPTEE);
         demande.setDateTraitement(LocalDateTime.now());
         demande.setTraitePar(traitePar);
@@ -123,6 +127,10 @@ public class DemandeMaterielServiceImpl implements DemandeMaterielService {
                 .orElseThrow(() -> new ResourceNotFoundException("DemandeMateriel", "id", demandeId));
         Membre traitePar = membreRepository.findById(traiteParId)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre", "id", traiteParId));
+        if (demande.getMembre().getId().equals(traiteParId)) {
+            throw new RuntimeException("Vous ne pouvez pas refuser votre propre demande.");
+        }
+
         demande.setStatut(StatutDemande.REFUSEE);
         demande.setDateTraitement(LocalDateTime.now());
         demande.setTraitePar(traitePar);

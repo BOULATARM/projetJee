@@ -35,5 +35,16 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByTypeAndEvenementIdOrderByDateEnvoiAsc(MessageType type, Long evenementId);
 
     long countByRecipientIdAndLueFalseAndType(Long recipientId, MessageType type);
+
+    @Query("""
+        SELECT m.sender.id, COUNT(m)
+        FROM Message m
+        WHERE m.type = 'DIRECT'
+          AND m.recipient.id = :meId
+          AND m.lue = false
+        GROUP BY m.sender.id
+        """)
+    List<Object[]> countUnreadPerSender(@Param("meId") Long meId);
+
     void deleteByEquipeId(Long equipeId);
 }

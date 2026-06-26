@@ -10,7 +10,7 @@ import { AlertTriangle, CheckCircle, ClipboardPlus, XCircle } from 'lucide-react
 import { useAuthStore } from '@/store/authStore';
 
 export default function DemandesMaterielPage() {
-  const { role } = useAuthStore();
+  const { role, membreId: currentMembreId } = useAuthStore();
   const isDirecteur = role === RoleSysteme.DIRECTEUR || role === RoleSysteme.VICE_DIRECTEUR;
   const isAdmin = role === RoleSysteme.ADMIN;
   const canRequest = true; // tous peuvent soumettre une demande, y compris DIRECTEUR/VICE_DIRECTEUR
@@ -279,7 +279,7 @@ export default function DemandesMaterielPage() {
 
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <Badge className={getStatutColor(demande.statut)}>{demande.statut}</Badge>
-                {isDirecteur && demande.statut === StatutDemande.PENDING && (
+                {isDirecteur && demande.statut === StatutDemande.PENDING && demande.membre?.id !== currentMembreId && (
                   <div className="flex gap-2">
                     <button onClick={() => updateStatus(demande.id, 'valider')}
                       className="flex items-center gap-1 px-2 py-1 text-xs text-green-700 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200">

@@ -5,6 +5,7 @@ import com.lias.entity.MessageType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MessageService {
     MessageDTO sendMessage(Long senderId, String contenu, MessageType type, Long recipientId, Long equipeId, Long evenementId, MultipartFile fichier);
@@ -15,4 +16,5 @@ public interface MessageService {
     List<Long> getConversationPartnerIds(Long meId);
     void markDirectRead(Long meId, Long otherId);
     long countUnreadDirect(Long meId);
+    Map<Long, Long> countUnreadPerPartner(Long meId);
 }
